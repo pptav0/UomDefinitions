@@ -7,6 +7,7 @@ include("./diameters.jl")
 include("./pressure.jl")
 include("./pump_rates.jl")
 include("./gas.jl")
+include("./conc_liquids.jl")
 
 # re-export everything you want public
 export Uom
@@ -34,5 +35,11 @@ export GasConcUnit, GasRateUnit, GasConc, GasRate
 export SCFM, SCMM, SCF_PER_BBL, scfm, scmm, scf_bbl
 export to_scfm, to_scmm
 export SCF_PER_BBL, SCM_PER_SCF
+
+# - Conc. Liquid
+export LiquidConcUnit, LiquidConc
+export FT3_PER_SK, LHK, L_PER_MT, ft3_sk, lhk, l_mt
+export to_ft3sk, to_lhk, to_lmt
+export LB_PER_SK, LB_PER_KG, KG_PER_LB, KG_PER_SK, L_PER_M3, KG_PER_MT
 
 end # module UomDefinitions
