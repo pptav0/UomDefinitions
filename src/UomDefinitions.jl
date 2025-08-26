@@ -3,12 +3,19 @@ module UomDefinitions
 # type definition
 abstract type Uom end
 
+include("./diameters.jl")
 include("./pressure.jl")
 include("./pump_rates.jl")
 include("./gas.jl")
 
 # re-export everything you want public
 export Uom
+
+# - Diameter
+export DiameterUnit, Diameter
+export IN, MM, inch, mm
+export to_in, to_mm
+export MM_PER_IN, IN_PER_MM
 
 # - Pump rates
 export PumpRateUnit, PumpRate
