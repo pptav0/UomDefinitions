@@ -32,18 +32,18 @@ const SCF_PER_SCM     = 35.314666721489      # 1 scm = 35.3147 scf
 const SCM_PER_SCF     = 1 / SCF_PER_SCM
 
 "Convert a gas rate to **scfm**."
-to_scfm(r::GasRate{SCFM}) = r.value
-to_scfm(r::GasRate{SCMM}) = r.value * SCF_PER_SCM
+to_scfm(r::GasRate{SCFM}) = r
+to_scfm(r::GasRate{SCMM}) = r.value * SCF_PER_SCM |> GasRate{SCFM}
 
 "Convert a gas rate to **scmm**."
-to_scmm(r::GasRate{SCMM}) = r.value
-to_scmm(r::GasRate{SCFM}) = r.value * SCM_PER_SCF
+to_scmm(r::GasRate{SCMM}) = r
+to_scmm(r::GasRate{SCFM}) = r.value * SCM_PER_SCF |> GasRate{SCMM}
 
 # numeric + unit singletons
-to_scfm(v::Real, ::SCFM) = float(v)
-to_scfm(v::Real, ::SCMM) = float(v) * SCF_PER_SCM
-to_scmm(v::Real, ::SCMM) = float(v)
-to_scmm(v::Real, ::SCFM) = float(v) * SCM_PER_SCF
+to_scfm(v::Real, ::SCFM) = GasConc(v, scfm)
+to_scfm(v::Real, ::SCMM) = float(v) * SCF_PER_SCM |> GasConc{SCFM}
+to_scmm(v::Real, ::SCMM) = GasConc(v, scmm)
+to_scmm(v::Real, ::SCFM) = float(v) * SCM_PER_SCF |> GasConc{SCMM}
 
 
 # --- Pretty printing for GasConc ---

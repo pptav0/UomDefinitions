@@ -37,23 +37,37 @@ PumpRate(v::Real, ::GPM) = PumpRate{GPM}(float(v))
 # Returns
 - `Float64`: Equivalent rate in BPM.
 """
-to_bpm(r::PumpRate{BPM}) = r.value
-to_bpm(r::PumpRate{LPM}) = r.value / L_PER_BBL      # LPM → BPM
-to_bpm(r::PumpRate{GPM}) = r.value / GAL_PER_BBL    # GAL → BPM
+to_bpm(r::PumpRate{BPM}) = PumpRate{BPM}(r.value)
+to_bpm(r::PumpRate{LPM}) = PumpRate{BPM}(r.value / L_PER_BBL)      # LPM → BPM
+to_bpm(r::PumpRate{GPM}) = PumpRate{BPM}(r.value / GAL_PER_BBL)    # GAL → BPM
 
 """
     to_lpm(r::PumpRate) -> Float64
 """
-to_lpm(r::PumpRate{LPM}) = r.value
-to_lpm(r::PumpRate{BPM}) = r.value * L_PER_BBL   # BPM → LPM
-to_lpm(r::PumpRate{GPM}) = r.value * L_PER_GAL   # GAL → LPM
+to_lpm(r::PumpRate{LPM}) = PumpRate{LPM}(r.value)
+to_lpm(r::PumpRate{BPM}) = PumpRate{LPM}(r.value * L_PER_BBL)   # BPM → LPM
+to_lpm(r::PumpRate{GPM}) = PumpRate{LPM}(r.value * L_PER_GAL)   # GAL → LPM
 
 """
     to_gpm(r::PumpRate) -> Float64
 """
-to_gpm(r::PumpRate{GPM}) = r.value
-to_gpm(r::PumpRate{BPM}) = r.value * GAL_PER_BBL    # BPM → GPM
-to_gpm(r::PumpRate{LPM}) = r.value / L_PER_GAL      # LPM → GPM
+to_gpm(r::PumpRate{GPM}) = PumpRate{GPM}(r.value)
+to_gpm(r::PumpRate{BPM}) = PumpRate{GPM}(r.value * GAL_PER_BBL)    # BPM → GPM
+to_gpm(r::PumpRate{LPM}) = PumpRate{GPM}(r.value / L_PER_GAL)      # LPM → GPM
+
+# Convenience numeric + unit singletons
+to_bpm(r::Real, ::BPM) = PumpRate(r, bpm)
+to_bpm(r::Real, ::LPM) = to_bpm(PumpRate(r, lpm))
+to_bpm(r::Real, ::GPM) = to_bpm(PumpRate(r, gpm))
+
+to_lpm(r::Real, ::BPM) = to_lpm(PumpRate(r, bpm))
+to_lpm(r::Real, ::LPM) = PumpRate(r, lpm)
+to_lpm(r::Real, ::GPM) = to_lpm(PumpRate(r, gpm))
+
+to_gpm(r::Real, ::BPM)  = to_gpm(PumpRate(r, bpm))
+to_gpm(r::Real, ::LPM)  = to_gpm(PumpRate(r, lpm))
+to_gpm(r::Real, ::GPM)  = PumpRate(r, gpm)
+
 
 # Pretty printing (optional)
 Base.show(io::IO, r::PumpRate{BPM}) = print(io, "$(r.value) BPM")

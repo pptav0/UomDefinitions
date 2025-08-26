@@ -45,6 +45,7 @@ const L_PER_FT3 = 0.3048^3 * 1e3
 const L_PER_M3  = 1000.0
 const L_PER_GAL = 3.785
 const GAL_PER_FT3 = 0.3048^3 * 1e3 / L_PER_GAL
+const FT3_PER_BBL = 5.6146
 
 # ---------------------------------------------------------------------
 # Conversions — return plain Float64 for numeric result
@@ -52,37 +53,37 @@ const GAL_PER_FT3 = 0.3048^3 * 1e3 / L_PER_GAL
     to_ft3sk(c::LiquidConc) -> Float64
 Convert to ft³/sk.
 """
-to_ft3sk(c::LiquidConc{FT3_PER_SK}) = c.value
-to_ft3sk(c::LiquidConc{LHK}) = (c.value / 100.0) * KG_PER_SK / L_PER_FT3
-to_ft3sk(c::LiquidConc{GPS}) = c.value / GAL_PER_FT3
-to_ft3sk(c::LiquidConc{L_PER_MT}) = (c.value / 1000.0) * KG_PER_SK / L_PER_FT3
+to_ft3sk(c::LiquidConc{FT3_PER_SK}) = c
+to_ft3sk(c::LiquidConc{LHK}) = (c.value / 100.0) * KG_PER_SK / L_PER_FT3        |> LiquidConc{FT3_PER_SK}
+to_ft3sk(c::LiquidConc{GPS}) = c.value / GAL_PER_FT3                            |> LiquidConc{FT3_PER_SK}
+to_ft3sk(c::LiquidConc{L_PER_MT}) = (c.value / 1000.0) * KG_PER_SK / L_PER_FT3  |> LiquidConc{FT3_PER_SK}
 
 """
     to_lhk(c::LiquidConc) -> Float64
 Convert to L/100kg.
 """
-to_lhk(c::LiquidConc{LHK}) = c.value
-to_lhk(c::LiquidConc{FT3_PER_SK}) = c.value * (100.0 / KG_PER_SK) * L_PER_FT3
-to_lhk(c::LiquidConc{GPS}) = c.value * L_PER_GAL / KG_PER_SK * 100.0
-to_lhk(c::LiquidConc{L_PER_MT}) = c.value / 10.0   # since 100 kg = 0.1 MT
+to_lhk(c::LiquidConc{LHK}) = c
+to_lhk(c::LiquidConc{FT3_PER_SK}) = c.value * (100.0 / KG_PER_SK) * L_PER_FT3   |> LiquidConc{LHK}
+to_lhk(c::LiquidConc{GPS}) = c.value * L_PER_GAL / KG_PER_SK * 100.0            |> LiquidConc{LHK}
+to_lhk(c::LiquidConc{L_PER_MT}) = c.value / 10.0                                |> LiquidConc{LHK}
 
 """
     to_gpm(c::LiquidConc) -> Float64
 Convert to gal/sk.
 """
-to_gps(c::LiquidConc{GPS}) = c.value
-to_gps(c::LiquidConc{LHK}) = (c.value / 100.0) / L_PER_GAL * KG_PER_SK
-to_gps(c::LiquidConc{FT3_PER_SK}) = c.value * GAL_PER_FT3 
-to_gps(c::LiquidConc{L_PER_MT}) = (c.value / 1000.0 ) / L_PER_GAL * KG_PER_SK
+to_gps(c::LiquidConc{GPS}) = c
+to_gps(c::LiquidConc{LHK}) = (c.value / 100.0) / L_PER_GAL * KG_PER_SK          |> LiquidConc{GPS}
+to_gps(c::LiquidConc{FT3_PER_SK}) = c.value * GAL_PER_FT3                       |> LiquidConc{GPS}
+to_gps(c::LiquidConc{L_PER_MT}) = (c.value / 1000.0 ) / L_PER_GAL * KG_PER_SK   |> LiquidConc{GPS}
 
 """
     to_lmt(c::LiquidConc) -> Float64
 Convert to L/MT.
 """
-to_lmt(c::LiquidConc{L_PER_MT}) = c.value
-to_lmt(c::LiquidConc{LHK}) = (c.value / 100.0) * KG_PER_MT
-to_lmt(c::LiquidConc{GPS}) = c.value * L_PER_GAL / KG_PER_SK * 1000.0
-to_lmt(c::LiquidConc{FT3_PER_SK}) = c.value / KG_PER_SK * KG_PER_MT * .3048^3 * 1e3
+to_lmt(c::LiquidConc{L_PER_MT}) = c
+to_lmt(c::LiquidConc{LHK}) = (c.value / 100.0) * KG_PER_MT                              |> LiquidConc{L_PER_MT}
+to_lmt(c::LiquidConc{GPS}) = c.value * L_PER_GAL / KG_PER_SK * 1000.0                   |> LiquidConc{L_PER_MT}
+to_lmt(c::LiquidConc{FT3_PER_SK}) = c.value / KG_PER_SK * KG_PER_MT * .3048^3 * 1e3     |> LiquidConc{L_PER_MT}
  
 # ---------------------------------------------------------------------
 # Pretty printing
