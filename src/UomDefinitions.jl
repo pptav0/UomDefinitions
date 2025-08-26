@@ -38,8 +38,9 @@ export SCF_PER_BBL, SCM_PER_SCF
 
 # - Conc. Liquid
 export LiquidConcUnit, LiquidConc
-export FT3_PER_SK, LHK, L_PER_MT, ft3_sk, lhk, l_mt
-export to_ft3sk, to_lhk, to_lmt
-export LB_PER_SK, LB_PER_KG, KG_PER_LB, KG_PER_SK, L_PER_M3, KG_PER_MT
+export FT3_PER_SK, LHK, GPS, L_PER_MT, ft3_sk, lhk, gps, l_mt
+export to_ft3sk, to_lhk, to_gps, to_lmt
+export LB_PER_SK, LB_PER_KG, KG_PER_LB, KG_PER_SK, KG_PER_MT
+export GAL_PER_FT3, L_PER_M3
 
 end # module UomDefinitions
