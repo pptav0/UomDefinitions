@@ -44,11 +44,11 @@ to_mm(d::Diameter{MM}) = d
 to_mm(d::Diameter{IN}) = d.value * MM_PER_IN    |> Diameter{MM}
 
 # convenience: numeric + unit
-to_in(v::Real, ::IN) = Diameter(v, inch)
-to_in(v::Real, ::MM) = float(v) * IN_PER_MM |> Diameter{IN}
+to_in(d::Real, ::IN) = Diameter(d, inch)
+to_in(d::Real, ::MM) = float(d) * IN_PER_MM |> Diameter{IN}
 
-to_mm(v::Real, ::MM) = Diameter(v, mm)
-to_mm(v::Real, ::IN) = float(v) * MM_PER_IN |> Diameter{MM}
+to_mm(d::Real, ::MM) = Diameter(d, mm)
+to_mm(d::Real, ::IN) = float(d) * MM_PER_IN |> Diameter{MM}
 
 # --- pretty printing ---
 Base.show(io::IO, d::Diameter{IN}) = print(io, "$(d.value) in")
