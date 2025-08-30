@@ -14,8 +14,9 @@ const mm   = MM()
 
 Represents a diameter with its unit (`IN` or `MM`).
 """
-struct Diameter{U<:DiameterUnit}
+mutable struct Diameter{U<:DiameterUnit}
     value::Float64
+    # Diameter(x::Real, ::U) where {U<:DiameterUnit} = new{U}(float(x))
 end
 
 # ergonomic constructors
@@ -53,3 +54,7 @@ to_mm(d::Real, ::IN) = float(d) * MM_PER_IN |> Diameter{MM}
 # --- pretty printing ---
 Base.show(io::IO, d::Diameter{IN}) = print(io, "$(d.value) in")
 Base.show(io::IO, d::Diameter{MM}) = print(io, "$(d.value) mm")
+
+# --- update properties ---
+Base.setproperty!(v::Diameter{U}, ::Val{:value}, x::Real) where {U} =
+    Diameter(x, U)

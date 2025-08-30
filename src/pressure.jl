@@ -20,8 +20,9 @@ const pa  = PA()
 
 Pressure quantity tagged with its unit (`BAR`, `PSI`, or `PA`).
 """
-struct Pressure{U<:PressureUnit}
+mutable struct Pressure{U<:PressureUnit}
     value::Float64
+    # Pressure(x::Real, ::U) where {U<:PressureUnit} = new{U}(float(x))
 end
 
 # ergonomic constructors
@@ -30,6 +31,7 @@ Pressure(v::Real, ::PSI) = Pressure{PSI}(float(v))
 Pressure(v::Real, ::PA)  = Pressure{PA}(float(v))
 
 # ===== constants =====
+const P_ATM       = Pressure(14.7, psi)
 const PSI_PER_BAR = 14.5037738007
 const PA_PER_BAR  = 1.0e5
 const PA_PER_PSI  = 6894.757293168
@@ -94,3 +96,6 @@ to_pa(v::Real, ::PA)   = Pressure(v, pa)
 Base.show(io::IO, p::Pressure{BAR}) = print(io, "$(p.value) bar")
 Base.show(io::IO, p::Pressure{PSI}) = print(io, "$(p.value) psi")
 Base.show(io::IO, p::Pressure{PA})  = print(io, "$(p.value) Pa")
+
+Base.setproperty!(r::Pressure{U}, ::Val{:value}, x::Real) where {U} =
+    Pressure(x, U)

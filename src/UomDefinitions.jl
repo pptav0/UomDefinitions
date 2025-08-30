@@ -1,11 +1,15 @@
 module UomDefinitions
 
+# libraries
+import ConstructionBase: setproperties
+
 # type definition
 abstract type Uom end
 
 include("./diameters.jl")
 include("./pressure.jl")
 include("./pump_rates.jl")
+include("./volume.jl")
 include("./gas.jl")
 include("./conc_liquids.jl")
 
@@ -29,6 +33,13 @@ export PressureUnit, Pressure
 export PSI, BAR, PA, psi, bar, pa
 export to_bar, to_psi, to_pa
 export PSI_PER_BAR, PA_PER_BAR, PA_PER_PSI
+export P_ATM
+
+# - Volume
+export VolumeUnit, Volume
+export M3, BBL, L, SCF, m3, bbl, ltr, scf
+export to_m3, to_bbl, to_ltr
+export FT3_PER_M3
 
 # - Gas
 export GasConcUnit, GasRateUnit, GasConc, GasRate

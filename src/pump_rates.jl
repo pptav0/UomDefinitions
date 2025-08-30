@@ -18,8 +18,12 @@ const gpm = GPM()
 
 A cement pump rate tagged with a unit (`BPM` or `LPM`).
 """
-struct PumpRate{U<:PumpRateUnit}
+mutable struct PumpRate{U<:PumpRateUnit}
     value::Float64
+
+    # function PumpRate(x::Real, ::U) where {U<:PumpRateUnit}
+    #     new{U}(float(x))
+    # end
 end
 
 # ergonomic constructors
@@ -73,3 +77,7 @@ to_gpm(r::Real, ::GPM)  = PumpRate(r, gpm)
 Base.show(io::IO, r::PumpRate{BPM}) = print(io, "$(r.value) BPM")
 Base.show(io::IO, r::PumpRate{LPM}) = print(io, "$(r.value) LPM")
 Base.show(io::IO, r::PumpRate{GPM}) = print(io, "$(r.value) GPM")
+
+
+Base.setproperty!(r::PumpRate{U}, ::Val{:value}, x::Real) where {U} =
+    PumpRate(x, U)

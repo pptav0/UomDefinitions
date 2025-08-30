@@ -24,11 +24,12 @@ const l_mt      = L_PER_MT()
 
 Liquid additive concentration with explicit unit type.
 """
-struct LiquidConc{U<:LiquidConcUnit}
+mutable struct LiquidConc{U<:LiquidConcUnit}
     value::Float64
+    # LiquidConc(x::Real, ::U) where {U<:LiquidConcUnit} = new{U}(float(x))
 end
 
-# ergonomic constructors
+# # ergonomic constructors
 LiquidConc(v::Real, ::FT3_PER_SK)   = LiquidConc{FT3_PER_SK}(float(v))
 LiquidConc(v::Real, ::LHK)          = LiquidConc{LHK}(float(v))
 LiquidConc(v::Real, ::GPS)          = LiquidConc{GPS}(float(v))
@@ -90,3 +91,6 @@ to_lmt(c::LiquidConc{FT3_PER_SK}) = c.value / KG_PER_SK * KG_PER_MT * .3048^3 * 
 Base.show(io::IO, c::LiquidConc{FT3_PER_SK}) = print(io, "$(c.value) ft³/sk")
 Base.show(io::IO, c::LiquidConc{LHK})        = print(io, "$(c.value) L/100kg")
 Base.show(io::IO, c::LiquidConc{L_PER_MT})  = print(io, "$(c.value) L/MT")
+
+Base.setproperty!(v::LiquidConc{U}, ::Val{:value}, x::Real) where {U} =
+    LiquidConc(x, U)

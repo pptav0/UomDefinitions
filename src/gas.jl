@@ -19,10 +19,16 @@ const scmm    = SCMM()
 
 Typed quantities for gas concentration and gas flow.
 """
-struct GasConc{U<:GasConcUnit}; value::Float64; end
-struct GasRate{U<:GasRateUnit}; value::Float64; end
+mutable struct GasConc{U<:GasConcUnit}
+    value::Float64
+    # GasConc(x::Real, ::U) where {U<:GasConcUnit} = new{U}(float(x))
+end
+mutable struct GasRate{U<:GasRateUnit}
+    value::Float64
+    # GasRate(x::Real, ::U) where {U<:GasRateUnit} = new{U}(float(x))
+end
 
-# ergonomic constructors
+# # ergonomic constructors
 GasConc(v::Real, ::SCF_PER_BBL) = GasConc{SCF_PER_BBL}(float(v))
 GasRate(v::Real, ::SCFM)        = GasRate{SCFM}(float(v))
 GasRate(v::Real, ::SCMM)        = GasRate{SCMM}(float(v))
@@ -52,3 +58,6 @@ Base.show(io::IO, g::GasConc{SCF_PER_BBL}) = print(io, "$(g.value) scf/bbl")
 # --- Pretty printing for GasRate ---
 Base.show(io::IO, g::GasRate{SCFM}) = print(io, "$(g.value) scfm")
 Base.show(io::IO, g::GasRate{SCMM}) = print(io, "$(g.value) scmm")
+
+Base.setproperty!(r::GasRate{U}, ::Val{:value}, x::Real) where {U} =
+    GasRate(x, U)
