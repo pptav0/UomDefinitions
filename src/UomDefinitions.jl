@@ -12,6 +12,9 @@ include("./pump_rates.jl")
 include("./volume.jl")
 include("./gas.jl")
 include("./conc_liquids.jl")
+include("./length.jl")
+include("./temperature.jl")
+include("./density.jl")
 
 # re-export everything you want public
 export Uom
@@ -53,5 +56,23 @@ export FT3_PER_SK, LHK, GPS, L_PER_MT, ft3_sk, lhk, gps, l_mt
 export to_ft3sk, to_lhk, to_gps, to_lmt
 export LB_PER_SK, LB_PER_KG, KG_PER_LB, KG_PER_SK, KG_PER_MT
 export GAL_PER_FT3, L_PER_M3, FT3_PER_BBL
+
+# - Length
+export LengthUnit, Length
+export FT, M, ft, m
+export to_ft, to_m
+export M_PER_FT, FT_PER_M
+
+# - Temperature
+export TemperatureUnit, Temperature
+export DEGF, DEGC, KELVIN, degF, degC, kelvin
+export to_degF, to_degC, to_kelvin, to_rankine
+export ZERO_C_IN_K, ZERO_F_IN_R, F_PER_C
+
+# - Density
+export DensityUnit, Density
+export PPG, KG_M3, SG, ppg, kg_m3, sg
+export to_ppg, to_kg_m3, to_sg
+export KG_M3_PER_PPG, KG_M3_PER_SG, PPG_PER_SG
 
 end # module UomDefinitions
