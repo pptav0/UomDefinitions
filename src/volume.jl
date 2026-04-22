@@ -32,7 +32,8 @@ Volume(v::Real, ::L; 	digits::Int=4) 	= Volume{L}(round(float(v); digits=digits)
 Volume(v::Real, ::SCF; 	digits::Int=4) 	= Volume{SCF}(round(float(v); digits=digits))
 
 # ========= CONSTANTS & CONVERSIONS ===========================================
-const FT3_PER_M3   = 35.3146667215
+const FT3_PER_M3 = 35.3146667215
+const L_PER_M3   = 1000.0
 
 # --- Conversion helpers ------------------------------------------------------
 
@@ -59,3 +60,76 @@ Base.show(io::IO, v::Volume{SCF}) = print(io, "$(v.value) scf")
 
 Base.setproperty!(v::Volume{U}, ::Val{:value}, x::Real) where {U} =
     Volume(x, U)
+
+# ========= STROKES (discrete pump-cycle count, as a VolumeUnit) ==============
+"""
+    STK
+
+Pump strokes. A discrete counting unit that slots into the `VolumeUnit` hierarchy
+so downstream code (plotting, slot mapping) can treat 'volume' channels uniformly.
+Converting to m³/bbl/L requires a [`StrokeCapacity`](@ref) — see `to_m3(::Volume{STK}, …)`.
+"""
+struct STK <: VolumeUnit end
+const stk = STK()
+
+Volume(v::Real, ::STK; digits::Int=0) = Volume{STK}(round(float(v); digits=digits))
+Base.show(io::IO, v::Volume{STK}) = print(io, "$(round(Int, v.value)) stk")
+
+# ========= STROKE CAPACITY (volume per stroke) ===============================
+"""
+    StrokeCapacityUnit <: Uom
+
+Abstract parent for units expressing pump displacement per stroke.
+"""
+abstract type StrokeCapacityUnit <: Uom end
+
+"liters per stroke"
+struct L_per_stk   <: StrokeCapacityUnit end
+"barrels per stroke"
+struct Bbl_per_stk <: StrokeCapacityUnit end
+
+const l_per_stk   = L_per_stk()
+const bbl_per_stk = Bbl_per_stk()
+
+"""
+    StrokeCapacity{U<:StrokeCapacityUnit}(value)
+
+Typed carrier for pump capacity factor (volume delivered per stroke).
+"""
+mutable struct StrokeCapacity{U<:StrokeCapacityUnit}
+    value::Float64
+end
+
+StrokeCapacity(v::Real, ::L_per_stk;   digits::Int=6) = StrokeCapacity{L_per_stk}(  round(float(v); digits=digits))
+StrokeCapacity(v::Real, ::Bbl_per_stk; digits::Int=6) = StrokeCapacity{Bbl_per_stk}(round(float(v); digits=digits))
+
+Base.show(io::IO, c::StrokeCapacity{L_per_stk})   = print(io, "$(c.value) L/stk")
+Base.show(io::IO, c::StrokeCapacity{Bbl_per_stk}) = print(io, "$(c.value) bbl/stk")
+
+# ========= STK → dimensional conversions =====================================
+"""
+    to_m3(v::Volume{STK}, c::StrokeCapacity{L_per_stk}; efficiency=1.0, digits=4)
+
+Convert a stroke count to m³ using an L/stk capacity factor.
+`efficiency ∈ (0, 1]` accounts for incomplete fill (volumetric efficiency).
+"""
+to_m3(v::Volume{STK}, c::StrokeCapacity{L_per_stk};
+      efficiency::Real=1.0, digits::Int=4) =
+    Volume(v.value * c.value * efficiency / L_PER_M3, m3; digits=digits)
+
+"""
+    to_m3(v::Volume{STK}, c::StrokeCapacity{Bbl_per_stk}; efficiency=1.0, digits=4)
+
+Convert a stroke count to m³ using a bbl/stk capacity factor.
+"""
+to_m3(v::Volume{STK}, c::StrokeCapacity{Bbl_per_stk};
+      efficiency::Real=1.0, digits::Int=4) =
+    Volume(v.value * c.value * efficiency * 159.0 / L_PER_M3, m3; digits=digits)
+
+"Convert a stroke count to barrels (delegates to `to_m3` then `to_bbl`)."
+to_bbl(v::Volume{STK}, c::StrokeCapacity; efficiency::Real=1.0, digits::Int=4) =
+    to_bbl(to_m3(v, c; efficiency=efficiency, digits=digits+2); digits=digits)
+
+"Convert a stroke count to liters."
+to_ltr(v::Volume{STK}, c::StrokeCapacity; efficiency::Real=1.0, digits::Int=4) =
+    to_ltr(to_m3(v, c; efficiency=efficiency, digits=digits+2); digits=digits)

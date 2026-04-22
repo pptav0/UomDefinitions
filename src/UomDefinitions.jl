@@ -40,9 +40,13 @@ export P_ATM
 
 # - Volume
 export VolumeUnit, Volume
-export M3, BBL, L, SCF, m3, bbl, ltr, scf
+export M3, BBL, L, SCF, STK, m3, bbl, ltr, scf, stk
 export to_m3, to_bbl, to_ltr
-export FT3_PER_M3
+export FT3_PER_M3, L_PER_M3
+
+# - Stroke capacity (pairs with Volume{STK})
+export StrokeCapacityUnit, StrokeCapacity
+export L_per_stk, Bbl_per_stk, l_per_stk, bbl_per_stk
 
 # - Gas
 export GasConcUnit, GasRateUnit, GasConc, GasRate
@@ -55,7 +59,7 @@ export LiquidConcUnit, LiquidConc
 export FT3_PER_SK, LHK, GPS, L_PER_MT, ft3_sk, lhk, gps, l_mt
 export to_ft3sk, to_lhk, to_gps, to_lmt
 export LB_PER_SK, LB_PER_KG, KG_PER_LB, KG_PER_SK, KG_PER_MT
-export GAL_PER_FT3, L_PER_M3, FT3_PER_BBL
+export GAL_PER_FT3, FT3_PER_BBL
 
 # - Length
 export LengthUnit, Length
