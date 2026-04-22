@@ -44,7 +44,7 @@ const KG_PER_SK = LB_PER_SK * KG_PER_LB       # ≈ 42.64 kg
 const KG_PER_MT = 1000.0
 const L_PER_FT3 = 0.3048^3 * 1e3
 const L_PER_M3  = 1000.0
-const L_PER_GAL = 3.785
+
 const GAL_PER_FT3 = 0.3048^3 * 1e3 / L_PER_GAL
 const FT3_PER_BBL = 5.6146
 

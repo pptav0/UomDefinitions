@@ -6,7 +6,7 @@ struct LPM <: PumpRateUnit end
 struct GPM <: PumpRateUnit end
 
 const L_PER_BBL = 159.0     # liters per US barrel
-const L_PER_GAL = 3.785
+const L_PER_GAL = 3.785411784   # US liquid gallon, exact
 const GAL_PER_BBL = 42.0    #  gallons per US barrel
 const bpm = BPM()  # handy singletons
 const lpm = LPM()
