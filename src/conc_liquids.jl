@@ -37,7 +37,7 @@ LiquidConc(v::Real, ::L_PER_MT)     = LiquidConc{L_PER_MT}(float(v))
 
 # ---------------------------------------------------------------------
 # Conversion constants
-const KG_PER_LB = 0.454
+const KG_PER_LB = 0.45359237   # NIST exact definition
 const LB_PER_SK = 94.0
 const LB_PER_KG = 1 / KG_PER_LB
 const KG_PER_SK = LB_PER_SK * KG_PER_LB       # ≈ 42.64 kg
