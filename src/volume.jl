@@ -60,3 +60,17 @@ Base.show(io::IO, v::Volume{SCF}) = print(io, "$(v.value) scf")
 
 Base.setproperty!(v::Volume{U}, ::Val{:value}, x::Real) where {U} =
     Volume(x, U)
+
+# ========= STROKES (discrete pump-cycle count, as a VolumeUnit) ==============
+"""
+    STK
+
+Pump strokes. A discrete counting unit that slots into the `VolumeUnit` hierarchy
+so downstream code (plotting, slot mapping) can treat 'volume' channels uniformly.
+Converting to m³/bbl/L requires a [`StrokeCapacity`](@ref) — see `to_m3(::Volume{STK}, …)`.
+"""
+struct STK <: VolumeUnit end
+const stk = STK()
+
+Volume(v::Real, ::STK; digits::Int=0) = Volume{STK}(round(float(v); digits=digits))
+Base.show(io::IO, v::Volume{STK}) = print(io, "$(round(Int, v.value)) stk")
