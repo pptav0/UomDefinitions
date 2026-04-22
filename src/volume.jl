@@ -32,7 +32,8 @@ Volume(v::Real, ::L; 	digits::Int=4) 	= Volume{L}(round(float(v); digits=digits)
 Volume(v::Real, ::SCF; 	digits::Int=4) 	= Volume{SCF}(round(float(v); digits=digits))
 
 # ========= CONSTANTS & CONVERSIONS ===========================================
-const FT3_PER_M3   = 35.3146667215
+const FT3_PER_M3 = 35.3146667215
+const L_PER_M3   = 1000.0
 
 # --- Conversion helpers ------------------------------------------------------
 
