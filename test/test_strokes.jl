@@ -23,3 +23,30 @@ end
     @test string(c1) == "12.5 L/stk"
     @test string(c2) == "0.08 bbl/stk"
 end
+
+@testset "STK → m³ via L_per_stk capacity" begin
+    cap = StrokeCapacity(12.5, l_per_stk)   # 12.5 L/stk
+    v   = Volume(1000, stk)                  # 1000 strokes → 12_500 L → 12.5 m³
+    @test to_m3(v, cap).value ≈ 12.5 atol=1e-4
+end
+
+@testset "STK → m³ with efficiency" begin
+    cap = StrokeCapacity(12.5, l_per_stk)
+    v   = Volume(1000, stk)
+    @test to_m3(v, cap; efficiency=0.9).value ≈ 11.25 atol=1e-4
+end
+
+@testset "STK → m³ via Bbl_per_stk capacity" begin
+    cap = StrokeCapacity(0.08, bbl_per_stk) # 0.08 bbl/stk
+    v   = Volume(500, stk)                   # 500 × 0.08 = 40 bbl = 40 × 0.158987 m³
+    @test to_m3(v, cap).value ≈ 40 * 0.158987 atol=1e-3
+end
+
+@testset "STK → bbl / ltr convenience" begin
+    cap = StrokeCapacity(0.08, bbl_per_stk)
+    v   = Volume(500, stk)
+    @test to_bbl(v, cap).value ≈ 40.0 atol=1e-3
+    cap2 = StrokeCapacity(12.5, l_per_stk)
+    v2   = Volume(100, stk)
+    @test to_ltr(v2, cap2).value ≈ 1250.0 atol=1e-3
+end
