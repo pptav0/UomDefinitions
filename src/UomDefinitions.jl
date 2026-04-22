@@ -44,6 +44,10 @@ export M3, BBL, L, SCF, STK, m3, bbl, ltr, scf, stk
 export to_m3, to_bbl, to_ltr
 export FT3_PER_M3, L_PER_M3
 
+# - Stroke capacity (pairs with Volume{STK})
+export StrokeCapacityUnit, StrokeCapacity
+export L_per_stk, Bbl_per_stk, l_per_stk, bbl_per_stk
+
 # - Gas
 export GasConcUnit, GasRateUnit, GasConc, GasRate
 export SCFM, SCMM, SCF_PER_BBL, scfm, scmm, scf_bbl

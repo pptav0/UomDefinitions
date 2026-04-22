@@ -74,3 +74,34 @@ const stk = STK()
 
 Volume(v::Real, ::STK; digits::Int=0) = Volume{STK}(round(float(v); digits=digits))
 Base.show(io::IO, v::Volume{STK}) = print(io, "$(round(Int, v.value)) stk")
+
+# ========= STROKE CAPACITY (volume per stroke) ===============================
+"""
+    StrokeCapacityUnit <: Uom
+
+Abstract parent for units expressing pump displacement per stroke.
+"""
+abstract type StrokeCapacityUnit <: Uom end
+
+"liters per stroke"
+struct L_per_stk   <: StrokeCapacityUnit end
+"barrels per stroke"
+struct Bbl_per_stk <: StrokeCapacityUnit end
+
+const l_per_stk   = L_per_stk()
+const bbl_per_stk = Bbl_per_stk()
+
+"""
+    StrokeCapacity{U<:StrokeCapacityUnit}(value)
+
+Typed carrier for pump capacity factor (volume delivered per stroke).
+"""
+mutable struct StrokeCapacity{U<:StrokeCapacityUnit}
+    value::Float64
+end
+
+StrokeCapacity(v::Real, ::L_per_stk;   digits::Int=6) = StrokeCapacity{L_per_stk}(  round(float(v); digits=digits))
+StrokeCapacity(v::Real, ::Bbl_per_stk; digits::Int=6) = StrokeCapacity{Bbl_per_stk}(round(float(v); digits=digits))
+
+Base.show(io::IO, c::StrokeCapacity{L_per_stk})   = print(io, "$(c.value) L/stk")
+Base.show(io::IO, c::StrokeCapacity{Bbl_per_stk}) = print(io, "$(c.value) bbl/stk")
