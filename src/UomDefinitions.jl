@@ -21,9 +21,9 @@ export Uom
 
 # - Diameter
 export DiameterUnit, Diameter
-export IN, MM, inch, mm
-export to_in, to_mm
-export MM_PER_IN, IN_PER_MM
+export IN, MM, D64, inch, mm, d64
+export to_in, to_mm, to_d64
+export MM_PER_IN, IN_PER_MM, D64_PER_IN
 
 # - Pump rates
 export PumpRateUnit, PumpRate
@@ -52,7 +52,7 @@ export L_per_stk, Bbl_per_stk, l_per_stk, bbl_per_stk
 export GasConcUnit, GasRateUnit, GasConc, GasRate
 export SCFM, SCMM, SCF_PER_BBL, scfm, scmm, scf_bbl
 export to_scfm, to_scmm
-export SCF_PER_BBL, SCM_PER_SCF
+export SCF_PER_BBL, SCM_PER_SCF, SCF_PER_SCM
 
 # - Conc. Liquid
 export LiquidConcUnit, LiquidConc
