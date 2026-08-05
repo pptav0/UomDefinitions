@@ -23,4 +23,4 @@ version = "1.6.0"
 deps = ["ConstructionBase"]
 path = "."
 uuid = "5c4bf7a8-0757-40b8-9968-47d0ead680d5"
-version = "0.3.0"
+version = "0.3.1"
