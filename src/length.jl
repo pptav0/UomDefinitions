@@ -54,6 +54,3 @@ to_m(v::Real, ::FT)  = Length{M}(float(v) * M_PER_FT)
 # ========= PRETTY PRINTING ===================================================
 Base.show(io::IO, l::Length{FT}) = print(io, "$(l.value) ft")
 Base.show(io::IO, l::Length{M})  = print(io, "$(l.value) m")
-
-Base.setproperty!(l::Length{U}, ::Val{:value}, x::Real) where {U} =
-    Length(x, U)

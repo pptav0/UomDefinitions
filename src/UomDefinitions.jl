@@ -42,7 +42,7 @@ export P_ATM
 export VolumeUnit, Volume
 export M3, BBL, L, SCF, STK, m3, bbl, ltr, scf, stk
 export to_m3, to_bbl, to_ltr
-export FT3_PER_M3, L_PER_M3
+export FT3_PER_M3, M3_PER_FT3, L_PER_M3
 
 # - Stroke capacity (pairs with Volume{STK})
 export StrokeCapacityUnit, StrokeCapacity
@@ -58,7 +58,7 @@ export SCF_PER_BBL, SCM_PER_SCF, SCF_PER_SCM
 export LiquidConcUnit, LiquidConc
 export FT3_PER_SK, LHK, GPS, L_PER_MT, ft3_sk, lhk, gps, l_mt
 export to_ft3sk, to_lhk, to_gps, to_lmt
-export LB_PER_SK, LB_PER_KG, KG_PER_LB, KG_PER_SK, KG_PER_MT
+export LB_PER_SK, LB_PER_KG, KG_PER_LB, KG_PER_SK, KG_PER_MT, KG_PER_HKG, L_PER_FT3
 export GAL_PER_FT3, FT3_PER_BBL
 
 # - Length
@@ -71,7 +71,7 @@ export M_PER_FT, FT_PER_M
 export TemperatureUnit, Temperature
 export DEGF, DEGC, KELVIN, degF, degC, kelvin
 export to_degF, to_degC, to_kelvin, to_rankine
-export ZERO_C_IN_K, ZERO_F_IN_R, F_PER_C
+export ZERO_C_IN_K, ZERO_F_IN_R, ZERO_C_IN_F, F_PER_C
 
 # - Density
 export DensityUnit, Density

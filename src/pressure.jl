@@ -1,5 +1,4 @@
 # ===== Units hierarchy =====
-abstract type Uom end
 abstract type PressureUnit <: Uom end
 
 "bar"
@@ -96,6 +95,3 @@ to_pa(v::Real, ::PA)   = Pressure(v, pa)
 Base.show(io::IO, p::Pressure{BAR}) = print(io, "$(p.value) bar")
 Base.show(io::IO, p::Pressure{PSI}) = print(io, "$(p.value) psi")
 Base.show(io::IO, p::Pressure{PA})  = print(io, "$(p.value) Pa")
-
-Base.setproperty!(r::Pressure{U}, ::Val{:value}, x::Real) where {U} =
-    Pressure(x, U)

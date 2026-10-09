@@ -32,34 +32,35 @@ Volume(v::Real, ::L; 	digits::Int=4) 	= Volume{L}(round(float(v); digits=digits)
 Volume(v::Real, ::SCF; 	digits::Int=4) 	= Volume{SCF}(round(float(v); digits=digits))
 
 # ========= CONSTANTS & CONVERSIONS ===========================================
-const FT3_PER_M3 = 35.3146667215
-const L_PER_M3   = 1000.0
+const M3_PER_FT3  = 0.3048^3            # 1 ft = 0.3048 m (exact)
+const FT3_PER_M3  = 1 / M3_PER_FT3      # ≈ 35.3147 ft³ per m³
+const L_PER_M3    = 1000.0
+const L_PER_FT3 = M3_PER_FT3 * L_PER_M3       # see volume.jl
+const FT3_PER_BBL = L_PER_BBL / (M3_PER_FT3 * L_PER_M3)   # ≈ 5.6146 ft³ per bbl
+const GAL_PER_FT3 = L_PER_FT3 / L_PER_GAL
 
 # --- Conversion helpers ------------------------------------------------------
 
 "Convert to cubic meters"
 to_m3(v::Volume{M3}; digits::Int=4)  = v
-to_m3(v::Volume{BBL}; digits::Int=4) = Volume(v.value * 159.0 / L_PER_M3, m3; digits=digits)
+to_m3(v::Volume{BBL}; digits::Int=4) = Volume(v.value * L_PER_BBL / L_PER_M3, m3; digits=digits)
 to_m3(v::Volume{L}; digits::Int=4)   = Volume(v.value / L_PER_M3, m3; digits=digits)
 
 "Convert to barrels"
 to_bbl(v::Volume{BBL}; digits::Int=4) = v
-to_bbl(v::Volume{M3}; digits::Int=4)  = Volume(v.value * L_PER_M3 / 159.0, bbl; digits=digits)
-to_bbl(v::Volume{L}; digits::Int=4)   = Volume(v.value / 159.0, bbl; digits=digits)
+to_bbl(v::Volume{M3}; digits::Int=4)  = Volume(v.value * L_PER_M3 / L_PER_BBL, bbl; digits=digits)
+to_bbl(v::Volume{L}; digits::Int=4)   = Volume(v.value / L_PER_BBL, bbl; digits=digits)
 
 "Convert to liters"
 to_ltr(v::Volume{L}; digits::Int=4)   = v
 to_ltr(v::Volume{M3}; digits::Int=4)  = Volume(v.value * L_PER_M3, ltr; digits=digits)
-to_ltr(v::Volume{BBL}; digits::Int=4) = Volume(v.value * 159.0, ltr; digits=digits)
+to_ltr(v::Volume{BBL}; digits::Int=4) = Volume(v.value * L_PER_BBL, ltr; digits=digits)
 
 # --- Pretty printing for Volume ----------------------------------------------
 Base.show(io::IO, v::Volume{M3})  = print(io, "$(v.value) m³")
 Base.show(io::IO, v::Volume{BBL}) = print(io, "$(v.value) bbl")
 Base.show(io::IO, v::Volume{L})   = print(io, "$(v.value) L")
 Base.show(io::IO, v::Volume{SCF}) = print(io, "$(v.value) scf")
-
-Base.setproperty!(v::Volume{U}, ::Val{:value}, x::Real) where {U} =
-    Volume(x, U)
 
 # ========= STROKES (discrete pump-cycle count, as a VolumeUnit) ==============
 """
@@ -124,7 +125,7 @@ Convert a stroke count to m³ using a bbl/stk capacity factor.
 """
 to_m3(v::Volume{STK}, c::StrokeCapacity{Bbl_per_stk};
       efficiency::Real=1.0, digits::Int=4) =
-    Volume(v.value * c.value * efficiency * 159.0 / L_PER_M3, m3; digits=digits)
+    Volume(v.value * c.value * efficiency * L_PER_BBL / L_PER_M3, m3; digits=digits)
 
 "Convert a stroke count to barrels (delegates to `to_m3` then `to_bbl`)."
 to_bbl(v::Volume{STK}, c::StrokeCapacity; efficiency::Real=1.0, digits::Int=4) =

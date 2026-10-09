@@ -43,6 +43,8 @@ const ZERO_C_IN_K     = 273.15
 const ZERO_F_IN_R     = 459.67
 "scale factor: 1 K (or 1 °C) = 1.8 R (or 1.8 °F)"
 const F_PER_C         = 1.8
+"zero of the Celsius scale expressed in °F"
+const ZERO_C_IN_F     = 32.0
 
 # ========= CONVERSIONS =======================================================
 """
@@ -51,8 +53,8 @@ const F_PER_C         = 1.8
 Convert to **degrees Fahrenheit** (includes offset, not a delta).
 """
 to_degF(t::Temperature{DEGF})   = t
-to_degF(t::Temperature{DEGC})   = Temperature{DEGF}(t.value * F_PER_C + 32.0)
-to_degF(t::Temperature{KELVIN}) = Temperature{DEGF}((t.value - ZERO_C_IN_K) * F_PER_C + 32.0)
+to_degF(t::Temperature{DEGC})   = Temperature{DEGF}(t.value * F_PER_C + ZERO_C_IN_F)
+to_degF(t::Temperature{KELVIN}) = Temperature{DEGF}((t.value - ZERO_C_IN_K) * F_PER_C + ZERO_C_IN_F)
 
 """
     to_degC(t::Temperature) -> Temperature{DEGC}
@@ -60,7 +62,7 @@ to_degF(t::Temperature{KELVIN}) = Temperature{DEGF}((t.value - ZERO_C_IN_K) * F_
 Convert to **degrees Celsius** (includes offset, not a delta).
 """
 to_degC(t::Temperature{DEGC})   = t
-to_degC(t::Temperature{DEGF})   = Temperature{DEGC}((t.value - 32.0) / F_PER_C)
+to_degC(t::Temperature{DEGF})   = Temperature{DEGC}((t.value - ZERO_C_IN_F) / F_PER_C)
 to_degC(t::Temperature{KELVIN}) = Temperature{DEGC}(t.value - ZERO_C_IN_K)
 
 """
@@ -70,7 +72,7 @@ Convert to **kelvin** (absolute).
 """
 to_kelvin(t::Temperature{KELVIN}) = t
 to_kelvin(t::Temperature{DEGC})   = Temperature{KELVIN}(t.value + ZERO_C_IN_K)
-to_kelvin(t::Temperature{DEGF})   = Temperature{KELVIN}((t.value - 32.0) / F_PER_C + ZERO_C_IN_K)
+to_kelvin(t::Temperature{DEGF})   = Temperature{KELVIN}((t.value - ZERO_C_IN_F) / F_PER_C + ZERO_C_IN_K)
 
 """
     to_rankine(t::Temperature) -> Float64
@@ -104,6 +106,3 @@ to_kelvin(v::Real, ::DEGC)   = to_kelvin(Temperature(v, degC))
 Base.show(io::IO, t::Temperature{DEGF})   = print(io, "$(t.value) °F")
 Base.show(io::IO, t::Temperature{DEGC})   = print(io, "$(t.value) °C")
 Base.show(io::IO, t::Temperature{KELVIN}) = print(io, "$(t.value) K")
-
-Base.setproperty!(t::Temperature{U}, ::Val{:value}, x::Real) where {U} =
-    Temperature(x, U)

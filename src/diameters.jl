@@ -94,7 +94,3 @@ to_d64(v::Real, ::MM)  = to_d64(Diameter(v, mm))
 Base.show(io::IO, d::Diameter{IN}) = print(io, "$(d.value) in")
 Base.show(io::IO, d::Diameter{MM}) = print(io, "$(d.value) mm")
 Base.show(io::IO, d::Diameter{D64}) = print(io, "$(d.value)/64 in")
-
-# --- update properties ---
-Base.setproperty!(v::Diameter{U}, ::Val{:value}, x::Real) where {U} =
-    Diameter(x, U)

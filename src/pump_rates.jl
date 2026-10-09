@@ -77,7 +77,3 @@ to_gpm(r::Real, ::GPM)  = PumpRate(r, gpm)
 Base.show(io::IO, r::PumpRate{BPM}) = print(io, "$(r.value) BPM")
 Base.show(io::IO, r::PumpRate{LPM}) = print(io, "$(r.value) LPM")
 Base.show(io::IO, r::PumpRate{GPM}) = print(io, "$(r.value) GPM")
-
-
-Base.setproperty!(r::PumpRate{U}, ::Val{:value}, x::Real) where {U} =
-    PumpRate(x, U)

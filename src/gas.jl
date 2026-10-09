@@ -34,7 +34,7 @@ GasRate(v::Real, ::SCFM)        = GasRate{SCFM}(float(v))
 GasRate(v::Real, ::SCMM)        = GasRate{SCMM}(float(v))
 
 # ========= CONSTANTS & CONVERSIONS ===========================================
-const SCF_PER_SCM     = 35.314666721489      # 1 scm = 35.3147 scf
+const SCF_PER_SCM     = FT3_PER_M3           # 1 scm = 35.3147 scf (see volume.jl)
 const SCM_PER_SCF     = 1 / SCF_PER_SCM
 
 "Convert a gas rate to **scfm**."
@@ -46,10 +46,10 @@ to_scmm(r::GasRate{SCMM}) = r
 to_scmm(r::GasRate{SCFM}) = r.value * SCM_PER_SCF |> GasRate{SCMM}
 
 # numeric + unit singletons
-to_scfm(v::Real, ::SCFM) = GasConc(v, scfm)
-to_scfm(v::Real, ::SCMM) = float(v) * SCF_PER_SCM |> GasConc{SCFM}
-to_scmm(v::Real, ::SCMM) = GasConc(v, scmm)
-to_scmm(v::Real, ::SCFM) = float(v) * SCM_PER_SCF |> GasConc{SCMM}
+to_scfm(v::Real, ::SCFM) = GasRate(v, scfm)
+to_scfm(v::Real, ::SCMM) = float(v) * SCF_PER_SCM |> GasRate{SCFM}
+to_scmm(v::Real, ::SCMM) = GasRate(v, scmm)
+to_scmm(v::Real, ::SCFM) = float(v) * SCM_PER_SCF |> GasRate{SCMM}
 
 
 # --- Pretty printing for GasConc ---
@@ -58,6 +58,3 @@ Base.show(io::IO, g::GasConc{SCF_PER_BBL}) = print(io, "$(g.value) scf/bbl")
 # --- Pretty printing for GasRate ---
 Base.show(io::IO, g::GasRate{SCFM}) = print(io, "$(g.value) scfm")
 Base.show(io::IO, g::GasRate{SCMM}) = print(io, "$(g.value) scmm")
-
-Base.setproperty!(r::GasRate{U}, ::Val{:value}, x::Real) where {U} =
-    GasRate(x, U)

@@ -31,8 +31,8 @@ Density(v::Real, ::KG_M3) = Density{KG_M3}(float(v))
 Density(v::Real, ::SG)    = Density{SG}(float(v))
 
 # ========= CONSTANTS =========================================================
-"1 ppg expressed in kg/m³"
-const KG_M3_PER_PPG = 119.826427
+"1 ppg expressed in kg/m³ — derived: KG_PER_LB * L_PER_M3 / L_PER_GAL ≈ 119.826427"
+const KG_M3_PER_PPG = KG_PER_LB * L_PER_M3 / L_PER_GAL
 "SG reference density (industry convention, not physical water mass)"
 const KG_M3_PER_SG  = 1000.0
 "1 SG expressed in ppg — derived: KG_M3_PER_SG / KG_M3_PER_PPG ≈ 8.345404"
@@ -83,6 +83,3 @@ to_sg(v::Real, ::KG_M3) = to_sg(Density(v, kg_m3))
 Base.show(io::IO, d::Density{PPG})   = print(io, "$(d.value) ppg")
 Base.show(io::IO, d::Density{KG_M3}) = print(io, "$(d.value) kg/m³")
 Base.show(io::IO, d::Density{SG})    = print(io, "$(d.value) SG")
-
-Base.setproperty!(d::Density{U}, ::Val{:value}, x::Real) where {U} =
-    Density(x, U)
