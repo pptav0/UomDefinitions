@@ -13,4 +13,5 @@ using UomDefinitions
     include("test_gas.jl")
     include("test_conc_liquids.jl")
     include("test_capacity.jl")
+    include("test_forces.jl")
 end

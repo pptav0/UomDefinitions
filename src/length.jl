@@ -91,3 +91,7 @@ to_mm(l::Length{M})  = to_mm(to_ft(l))
 # ========= PRETTY PRINTING ===================================================
 Base.show(io::IO, l::Length{FT}) = print(io, "$(l.value) ft")
 Base.show(io::IO, l::Length{M})  = print(io, "$(l.value) m")
+
+"Convert to the unit given as a singleton (`ft`, `m`)."
+to_unit(l::Length, ::FT) = to_ft(l)
+to_unit(l::Length, ::M)  = to_m(l)

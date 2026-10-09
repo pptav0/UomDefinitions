@@ -95,3 +95,24 @@ to_pa(v::Real, ::PA)   = Pressure(v, pa)
 Base.show(io::IO, p::Pressure{BAR}) = print(io, "$(p.value) bar")
 Base.show(io::IO, p::Pressure{PSI}) = print(io, "$(p.value) psi")
 Base.show(io::IO, p::Pressure{PA})  = print(io, "$(p.value) Pa")
+
+# ===== megapascal (added for differential-pressure reporting) =====
+"megapascal"
+struct MPA <: PressureUnit end
+const mpa = MPA()
+const PA_PER_MPA = 1.0e6
+Pressure(v::Real, ::MPA) = Pressure{MPA}(float(v))
+to_pa(p::Pressure{MPA})  = Pressure{PA}(p.value * PA_PER_MPA)
+to_bar(p::Pressure{MPA}) = to_bar(to_pa(p))
+to_psi(p::Pressure{MPA}) = to_psi(to_pa(p))
+"Convert to megapascals"
+to_mpa(p::Pressure{MPA}) = p
+to_mpa(p::Pressure)      = Pressure{MPA}(to_pa(p).value / PA_PER_MPA)
+to_mpa(v::Real, u::PressureUnit) = to_mpa(Pressure(v, u))
+Base.show(io::IO, p::Pressure{MPA}) = print(io, "$(p.value) MPa")
+
+"Convert to the unit given as a singleton (`bar`, `psi`, `pa`, `mpa`)."
+to_unit(p::Pressure, ::BAR) = to_bar(p)
+to_unit(p::Pressure, ::PSI) = to_psi(p)
+to_unit(p::Pressure, ::PA)  = to_pa(p)
+to_unit(p::Pressure, ::MPA) = to_mpa(p)

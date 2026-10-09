@@ -77,3 +77,8 @@ to_gpm(r::Real, ::GPM)  = PumpRate(r, gpm)
 Base.show(io::IO, r::PumpRate{BPM}) = print(io, "$(r.value) BPM")
 Base.show(io::IO, r::PumpRate{LPM}) = print(io, "$(r.value) LPM")
 Base.show(io::IO, r::PumpRate{GPM}) = print(io, "$(r.value) GPM")
+
+"Convert to the unit given as a singleton (`bpm`, `lpm`, `gpm`)."
+to_unit(r::PumpRate, ::BPM) = to_bpm(r)
+to_unit(r::PumpRate, ::LPM) = to_lpm(r)
+to_unit(r::PumpRate, ::GPM) = to_gpm(r)

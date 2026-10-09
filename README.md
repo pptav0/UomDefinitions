@@ -23,7 +23,7 @@ Because the unit lives in the type parameter, conversions dispatch statically an
 |---|---|---|
 | `Diameter` | in, mm, 64ths of an inch (choke sizes, `d64`) | `to_in`, `to_mm`, `to_d64` |
 | `Length` | ft, m | `to_ft`, `to_m` |
-| `Pressure` | psi, bar, Pa | `to_psi`, `to_bar`, `to_pa` |
+| `Pressure` | psi, bar, Pa, MPa | `to_psi`, `to_bar`, `to_pa`, `to_mpa` |
 | `Volume` | m³, bbl, L, scf, strokes | `to_m3`, `to_bbl`, `to_ltr` |
 | `StrokeCapacity` | L/stk, bbl/stk | pairs with `Volume{STK}` |
 | `PumpRate` | bpm, gpm, L/min | `to_bpm`, `to_gpm`, `to_lpm` |
@@ -32,8 +32,16 @@ Because the unit lives in the type parameter, conversions dispatch statically an
 | `GasConc` / `GasRate` | scf/bbl, SCFM, SCMM | `to_scfm`, `to_scmm` |
 | `LiquidConc` | ft³/sk, L/100kg (LHK), gal/sk (GPS), L/MT | `to_ft3sk`, `to_lhk`, `to_gps`, `to_lmt` |
 | `Capacity` | bbl/ft, gal/ft, ft³/ft, m³/m, L/m (volume per unit length) | `to_bbl_ft`, `to_gal_ft`, `to_ft3_ft`, `to_m3_m`, `to_l_m` |
+| `Area` | in², ft², m² | `to_in2`, `to_ft2`, `to_m2` |
+| `Mass` | kg, lbm | `to_kg`, `to_lbm` |
+| `Acceleration` | m/s², ft/s² | `to_m_s2`, `to_ft_s2` |
+| `Force` | N, lbf | `to_n`, `to_lbf` |
 
-`to_unit(q, unit)` converts a `Capacity` or `Volume` to the unit given as a singleton, which is handy for selecting an output unit through a keyword argument (`annulus_capacity(…; out=l_m)` in SimuUtils).
+`to_unit(q, unit)` converts any quantity (`Density`, `Pressure`, `PumpRate`, `Length`, `Diameter`, `Volume`, `Capacity`, `Area`, `Mass`, `Acceleration`, `Force`) to the unit given as a singleton, so a *unit set* can be applied generically (`annulus_capacity(…; out=l_m)` in SimuUtils).
+
+## Gravity and force primitives
+
+`GRAVITY = Acceleration(9.80665, m_s2)` is the single gravity definition. Force arises from two products only: `pressure_force(ΔP, A)` (psi·in² = lbf, Pa·m² = N) and `weight_of(ρ, V)` / `weight_of(m)` (lbm under standard gravity = lbf, kg·g = N). `Forces{Q}(x, y, res)` is a generic decomposition over any quantity; `gravity_forces(inc)` gives gravity components at an inclination and `along_hole(F, inc)` decomposes a vertical force the same way.
 
 `Diameter` and `Length` bridge into each other: `to_ft` / `to_m` accept a `Diameter` (e.g. a casing OD in inches becomes a `Length{FT}` for area calculations) and `to_in` / `to_mm` accept a `Length`.
 

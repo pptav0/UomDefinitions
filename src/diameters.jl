@@ -94,3 +94,8 @@ to_d64(v::Real, ::MM)  = to_d64(Diameter(v, mm))
 Base.show(io::IO, d::Diameter{IN}) = print(io, "$(d.value) in")
 Base.show(io::IO, d::Diameter{MM}) = print(io, "$(d.value) mm")
 Base.show(io::IO, d::Diameter{D64}) = print(io, "$(d.value)/64 in")
+
+"Convert to the unit given as a singleton (`inch`, `mm`, `d64`)."
+to_unit(d::Diameter, ::IN)  = to_in(d)
+to_unit(d::Diameter, ::MM)  = to_mm(d)
+to_unit(d::Diameter, ::D64) = to_d64(d)

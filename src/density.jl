@@ -83,3 +83,8 @@ to_sg(v::Real, ::KG_M3) = to_sg(Density(v, kg_m3))
 Base.show(io::IO, d::Density{PPG})   = print(io, "$(d.value) ppg")
 Base.show(io::IO, d::Density{KG_M3}) = print(io, "$(d.value) kg/m³")
 Base.show(io::IO, d::Density{SG})    = print(io, "$(d.value) SG")
+
+"Convert to the unit given as a singleton (`ppg`, `kg_m3`, `sg`)."
+to_unit(d::Density, ::PPG)   = to_ppg(d)
+to_unit(d::Density, ::KG_M3) = to_kg_m3(d)
+to_unit(d::Density, ::SG)    = to_sg(d)
