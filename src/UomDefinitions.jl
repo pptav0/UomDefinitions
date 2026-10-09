@@ -82,8 +82,8 @@ export KG_M3_PER_PPG, KG_M3_PER_SG, PPG_PER_SG
 
 # - Capacity (volume per unit length)
 export CapacityUnit, Capacity
-export BBL_PER_FT, GAL_PER_FT, M3_PER_M, L_PER_M, bbl_ft, gal_ft, m3_m, l_m
-export to_bbl_ft, to_gal_ft, to_m3_m, to_l_m
-export M3_M_PER_BBL_FT, BBL_FT_PER_M3_M
+export BBL_PER_FT, GAL_PER_FT, FT3_PER_FT, M3_PER_M, L_PER_M, bbl_ft, gal_ft, ft3_ft, m3_m, l_m
+export to_bbl_ft, to_gal_ft, to_ft3_ft, to_m3_m, to_l_m
+export M3_M_PER_BBL_FT, BBL_FT_PER_M3_M, M3_M_PER_FT3_FT, FT3_FT_PER_M3_M
 
 end # module UomDefinitions

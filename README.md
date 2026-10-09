@@ -31,7 +31,7 @@ Because the unit lives in the type parameter, conversions dispatch statically an
 | `Temperature` | °F, °C, K | `to_degF`, `to_degC`, `to_kelvin`, `to_rankine` |
 | `GasConc` / `GasRate` | scf/bbl, SCFM, SCMM | `to_scfm`, `to_scmm` |
 | `LiquidConc` | ft³/sk, L/100kg (LHK), gal/sk (GPS), L/MT | `to_ft3sk`, `to_lhk`, `to_gps`, `to_lmt` |
-| `Capacity` | bbl/ft, gal/ft, m³/m, L/m (volume per unit length) | `to_bbl_ft`, `to_gal_ft`, `to_m3_m`, `to_l_m` |
+| `Capacity` | bbl/ft, gal/ft, ft³/ft, m³/m, L/m (volume per unit length) | `to_bbl_ft`, `to_gal_ft`, `to_ft3_ft`, `to_m3_m`, `to_l_m` |
 
 `to_unit(q, unit)` converts a `Capacity` or `Volume` to the unit given as a singleton, which is handy for selecting an output unit through a keyword argument (`annulus_capacity(…; out=l_m)` in SimuUtils).
 
@@ -43,7 +43,7 @@ Every factor is a named, exported constant, and each physical definition is writ
 
 | Base definition | Derived from it |
 |---|---|
-| `M_PER_FT = 0.3048` | `FT_PER_M`, `M3_PER_FT3`, `FT3_PER_M3`, `L_PER_FT3`, `GAL_PER_FT3`, `SCF_PER_SCM`, `SCM_PER_SCF` |
+| `M_PER_FT = 0.3048` | `FT_PER_M`, `M3_PER_FT3`, `FT3_PER_M3`, `L_PER_FT3`, `GAL_PER_FT3`, `SCF_PER_SCM`, `SCM_PER_SCF`, `M3_M_PER_FT3_FT`, `FT3_FT_PER_M3_M` |
 | `MM_PER_IN = 25.4`, `IN_PER_FT = 12` | `IN_PER_MM`, `MM_PER_FT`, `D64_PER_IN` |
 | `L_PER_BBL = 159`, `L_PER_GAL = 3.785411784`, `GAL_PER_BBL = 42` | `FT3_PER_BBL`, `M3_M_PER_BBL_FT`, `BBL_FT_PER_M3_M` |
 | `KG_PER_LB = 0.45359237`, `LB_PER_SK = 94` | `LB_PER_KG`, `KG_PER_SK`, `KG_M3_PER_PPG`, `PPG_PER_SG` |

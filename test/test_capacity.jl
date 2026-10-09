@@ -49,3 +49,22 @@ end
     @test to_unit(v, ltr).value ≈ 1000.0
     @test to_unit(v, m3) === v
 end
+
+@testset "Capacity — ft³/ft" begin
+    @test Capacity(1.0, ft3_ft) isa Capacity{FT3_PER_FT}
+    @test string(Capacity(0.2577, ft3_ft)) == "0.2577 ft³/ft"
+    # 1 ft³/ft = 0.3048² m³/m
+    @test M3_M_PER_FT3_FT ≈ M_PER_FT^2
+    @test M3_M_PER_FT3_FT * FT3_FT_PER_M3_M ≈ 1.0
+    # 1 bbl/ft = FT3_PER_BBL ft³/ft
+    @test to_ft3_ft(Capacity(1.0, bbl_ft)).value ≈ FT3_PER_BBL
+    @test to_bbl_ft(Capacity(FT3_PER_BBL, ft3_ft)).value ≈ 1.0 atol=1e-12
+    @test to_m3_m(Capacity(1.0, ft3_ft)).value ≈ M_PER_FT^2
+    @test to_ft3_ft(1.0, m3_m).value ≈ 1 / M_PER_FT^2
+    # round-trip and dispatcher
+    c = Capacity(0.2577, ft3_ft)
+    @test to_ft3_ft(c) === c
+    @test to_ft3_ft(to_l_m(c)).value ≈ c.value atol=1e-12
+    @test to_unit(c, bbl_ft) isa Capacity{BBL_PER_FT}
+    @test to_unit(Capacity(1.0, gal_ft), ft3_ft).value ≈ FT3_PER_BBL / GAL_PER_BBL
+end
