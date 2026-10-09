@@ -33,7 +33,7 @@ Because the unit lives in the type parameter, conversions dispatch statically an
 | `LiquidConc` | ft³/sk, L/100kg (LHK), gal/sk (GPS), L/MT | `to_ft3sk`, `to_lhk`, `to_gps`, `to_lmt` |
 | `Capacity` | bbl/ft, gal/ft, m³/m, L/m (volume per unit length) | `to_bbl_ft`, `to_gal_ft`, `to_m3_m`, `to_l_m` |
 
-`to_unit(q, unit)` converts a `Capacity` or `Volume` to the unit given as a singleton, which is handy for selecting an output unit through a keyword argument (`annular_capacity(…; out=l_m)` in SimuUtils).
+`to_unit(q, unit)` converts a `Capacity` or `Volume` to the unit given as a singleton, which is handy for selecting an output unit through a keyword argument (`annulus_capacity(…; out=l_m)` in SimuUtils).
 
 `Diameter` and `Length` bridge into each other: `to_ft` / `to_m` accept a `Diameter` (e.g. a casing OD in inches becomes a `Length{FT}` for area calculations) and `to_in` / `to_mm` accept a `Length`.
 
