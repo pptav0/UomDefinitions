@@ -15,6 +15,7 @@ include("./conc_liquids.jl")
 include("./length.jl")
 include("./temperature.jl")
 include("./density.jl")
+include("./capacity.jl")   # needs volume, pump_rates, length constants
 
 # re-export everything you want public
 export Uom
@@ -41,7 +42,7 @@ export P_ATM
 # - Volume
 export VolumeUnit, Volume
 export M3, BBL, L, SCF, STK, m3, bbl, ltr, scf, stk
-export to_m3, to_bbl, to_ltr
+export to_m3, to_bbl, to_ltr, to_unit
 export FT3_PER_M3, M3_PER_FT3, L_PER_M3
 
 # - Stroke capacity (pairs with Volume{STK})
@@ -78,5 +79,11 @@ export DensityUnit, Density
 export PPG, KG_M3, SG, ppg, kg_m3, sg
 export to_ppg, to_kg_m3, to_sg
 export KG_M3_PER_PPG, KG_M3_PER_SG, PPG_PER_SG
+
+# - Capacity (volume per unit length)
+export CapacityUnit, Capacity
+export BBL_PER_FT, GAL_PER_FT, M3_PER_M, L_PER_M, bbl_ft, gal_ft, m3_m, l_m
+export to_bbl_ft, to_gal_ft, to_m3_m, to_l_m
+export M3_M_PER_BBL_FT, BBL_FT_PER_M3_M
 
 end # module UomDefinitions

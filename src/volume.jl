@@ -56,6 +56,16 @@ to_ltr(v::Volume{L}; digits::Int=4)   = v
 to_ltr(v::Volume{M3}; digits::Int=4)  = Volume(v.value * L_PER_M3, ltr; digits=digits)
 to_ltr(v::Volume{BBL}; digits::Int=4) = Volume(v.value * L_PER_BBL, ltr; digits=digits)
 
+"""
+    to_unit(v::Volume, u::VolumeUnit; digits=4) -> Volume
+
+Convert to the unit given as a singleton (`m3`, `bbl`, `ltr`).
+Lets callers select the output unit with a keyword argument.
+"""
+to_unit(v::Volume, ::M3;  digits::Int=4) = to_m3(v; digits=digits)
+to_unit(v::Volume, ::BBL; digits::Int=4) = to_bbl(v; digits=digits)
+to_unit(v::Volume, ::L;   digits::Int=4) = to_ltr(v; digits=digits)
+
 # --- Pretty printing for Volume ----------------------------------------------
 Base.show(io::IO, v::Volume{M3})  = print(io, "$(v.value) m³")
 Base.show(io::IO, v::Volume{BBL}) = print(io, "$(v.value) bbl")
