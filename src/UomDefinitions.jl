@@ -65,7 +65,7 @@ export GAL_PER_FT3, FT3_PER_BBL
 export LengthUnit, Length
 export FT, M, ft, m
 export to_ft, to_m
-export M_PER_FT, FT_PER_M
+export M_PER_FT, FT_PER_M, IN_PER_FT, MM_PER_FT
 
 # - Temperature
 export TemperatureUnit, Temperature
