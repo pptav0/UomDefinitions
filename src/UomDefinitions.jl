@@ -42,7 +42,6 @@ export MM_PER_IN, CM_PER_IN, M_PER_IN, IN_PER_MM, D64_PER_IN
 export PumpRateUnit, PumpRate
 export BPM, LPM, GPM, bpm, lpm, gpm
 export to_bpm, to_lpm, to_gpm
-export L_PER_BBL, L_PER_GAL, GAL_PER_BBL
 
 # - Presuure
 export PressureUnit, Pressure
@@ -57,6 +56,7 @@ export M3, BBL, L, SCF, STK, m3, bbl, ltr, scf, stk
 export to_m3, to_bbl, to_ltr
 export to_unit
 export FT3_PER_M3, M3_PER_FT3, L_PER_M3
+export L_PER_BBL, L_PER_GAL, GAL_PER_BBL
 
 # - Stroke capacity (pairs with Volume{STK})
 export StrokeCapacityUnit, StrokeCapacity
