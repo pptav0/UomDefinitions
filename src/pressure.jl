@@ -6,7 +6,7 @@ struct BAR <: PressureUnit end
 "pound per square inch"
 struct PSI <: PressureUnit end
 "pascal"
-struct PA  <: PressureUnit end
+struct PA   <: PressureUnit end
 
 # handy singletons
 const bar = BAR()
@@ -18,16 +18,29 @@ const pa  = PA()
     Pressure{U<:PressureUnit}(value)
 
 Pressure quantity tagged with its unit (`BAR`, `PSI`, or `PA`).
+
+Note: Pressure values must be finite and non-negative (absolute pressure).
+See PROJECT_SPEC.md §Phase 1, Task 2.0 for error handling requirements.
 """
 mutable struct Pressure{U<:PressureUnit}
     value::Float64
-    # Pressure(x::Real, ::U) where {U<:PressureUnit} = new{U}(float(x))
 end
 
-# ergonomic constructors
-Pressure(v::Real, ::BAR) = Pressure{BAR}(float(v))
-Pressure(v::Real, ::PSI) = Pressure{PSI}(float(v))
-Pressure(v::Real, ::PA)  = Pressure{PA}(float(v))
+# Constructors with validation (following pattern from Task 1.0)
+"""
+    Pressure(v::Real, unit::PressureUnit)
+
+Construct a pressure with explicit unit tag. Validates `v` is finite and ≥ 0.
+
+Throws:
+- `InvalidValueError` if `v` is `NaN`, `Inf`, or `-Inf`
+- `NegativeValueError` if `v < 0` (negative absolute pressure is non-physical)
+
+See PROJECT_SPEC.md §Phase 1, Task 2.0 for validation requirements.
+"""
+Pressure(v::Real, ::BAR) = isnothing(validate_value(v)) && Pressure{BAR}(float(v))
+Pressure(v::Real, ::PSI) = isnothing(validate_value(v)) && Pressure{PSI}(float(v))
+Pressure(v::Real, ::PA)  = isnothing(validate_value(v)) && Pressure{PA}(float(v))
 
 # ===== constants =====
 const P_ATM       = Pressure(14.7, psi)
@@ -101,13 +114,19 @@ Base.show(io::IO, p::Pressure{PA})  = print(io, "$(p.value) Pa")
 struct MPA <: PressureUnit end
 const mpa = MPA()
 const PA_PER_MPA = 1.0e6
-Pressure(v::Real, ::MPA) = Pressure{MPA}(float(v))
-to_pa(p::Pressure{MPA})  = Pressure{PA}(p.value * PA_PER_MPA)
+
+# Constructor with validation
+function Pressure(v::Real, ::MPA)
+    validate_value(v)
+    return Pressure{MPA}(float(v))
+end
+
+to_pa(p::Pressure{MPA})   = Pressure{PA}(p.value * PA_PER_MPA)
 to_bar(p::Pressure{MPA}) = to_bar(to_pa(p))
 to_psi(p::Pressure{MPA}) = to_psi(to_pa(p))
 "Convert to megapascals"
 to_mpa(p::Pressure{MPA}) = p
-to_mpa(p::Pressure)      = Pressure{MPA}(to_pa(p).value / PA_PER_MPA)
+to_mpa(p::Pressure)       = Pressure{MPA}(to_pa(p).value / PA_PER_MPA)
 to_mpa(v::Real, u::PressureUnit) = to_mpa(Pressure(v, u))
 Base.show(io::IO, p::Pressure{MPA}) = print(io, "$(p.value) MPa")
 
