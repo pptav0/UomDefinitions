@@ -40,9 +40,10 @@ Throws:
 
 See PROJECT_SPEC.md §Phase 1, Task 3.0 for validation requirements.
 """
-Density(v::Real, ::PPG)   = isnothing(validate_value(v)) && Density{PPG}(float(v))
-Density(v::Real, ::KG_M3) = isnothing(validate_value(v)) && Density{KG_M3}(float(v))
-Density(v::Real, ::SG)    = isnothing(validate_value(v)) && Density{SG}(float(v))
+function Density(v::Real, ::U) where {U<:DensityUnit}
+    validate_value(v)
+    Density{U}(float(v))
+end
 
 # ========= CONSTANTS =========================================================
 "SG reference density (industry convention, not physical water mass)"

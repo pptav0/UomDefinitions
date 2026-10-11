@@ -38,9 +38,10 @@ Throws:
 
 See PROJECT_SPEC.md §Phase 1, Task 2.0 for validation requirements.
 """
-Pressure(v::Real, ::BAR) = isnothing(validate_value(v)) && Pressure{BAR}(float(v))
-Pressure(v::Real, ::PSI) = isnothing(validate_value(v)) && Pressure{PSI}(float(v))
-Pressure(v::Real, ::PA)  = isnothing(validate_value(v)) && Pressure{PA}(float(v))
+function Pressure(v::Real, ::U) where {U<:PressureUnit}
+    validate_value(v)
+    Pressure{U}(float(v))
+end
 
 # ===== constants =====
 const P_ATM       = Pressure(14.7, psi)
