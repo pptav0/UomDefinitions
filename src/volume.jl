@@ -1,10 +1,10 @@
 # ========= VOLUME UNITS & QUANTITIES =========================================
 abstract type VolumeUnit <: Uom end
 
-"cubic meters"
-struct M3  <: VolumeUnit end
 "liters"
 struct L   <: VolumeUnit end
+"cubic meters"
+struct M3  <: VolumeUnit end
 "cubic foot"
 struct FT3 <: VolumeUnit end
 "US liquid gallon"
@@ -23,8 +23,8 @@ Converting to m³/bbl/L requires a [`StrokeCapacity`](@ref) — see `to_m3(::Vol
 """
 struct STK <: VolumeUnit end
 
-const m3   = M3()
 const ltr  = L()
+const m3   = M3()
 const ft3  = FT3()
 const gal  = GAL()
 const bbl  = BBL()
@@ -66,8 +66,9 @@ const M3_PER_FT3    = 0.3048^3          # 1 ft = 0.3048 m (exact)
 const FT3_PER_M3    = 1 / M3_PER_FT3    # ≈ 35.3147 ft³ per m³
 const L_PER_M3      = 1000.0
 const L_PER_FT3     = M3_PER_FT3 * L_PER_M3
-const L_PER_GAL     = 3.785411784       # US liquid gallon, exact
+const L_PER_GAL     = 3.785411784       # US liquid gallon (exact)
 const L_PER_BBL     = 159               # liters per US barrel
+const M3_PER_BBL    = L_PER_BBL / L_PER_M3
 const GAL_PER_BBL   = 42.0              # gallons per US barrel
 const FT3_PER_BBL   = L_PER_BBL / (M3_PER_FT3 * L_PER_M3)   # ≈ 5.6146 ft³ per bbl
 const GAL_PER_FT3   = L_PER_BBL / GAL_PER_BBL
@@ -147,40 +148,34 @@ const l_per_stk   = L_per_stk()
 const bbl_per_stk = Bbl_per_stk()
 
 """
-    StrokeCapacity{U<:StrokeCapacityUnit}(value)
+    StrokeCapacity{U<:StrokeCapacityUnit}(value::Real)
 
 Typed carrier for pump capacity factor (volume delivered per stroke).
 
 Used in STK → dimensional volume conversions (e.g., strokes × L/stk = liters pumped).
 Critical parameter for converting discrete stroke counts into actual fluid volumes.
 
-Note: Capacity values must be finite and non-negative. Zero capacity is constructible
-but will result in zero-volume output during STK conversions (design decision, not error).
-See PROJECT_SPEC.md §Phase 1, Task 4.0 for StrokeCapacity validation requirements.
+Note: Capacity values must be finite and non-negative. Pump displacement per stroke
+cannot be negative (physical constraint). Zero is allowed but results in zero-volume
+output during STK → dimensional conversions (design decision, not error).
+
+Throws:
+- `InvalidValueError`  if `value` is `NaN`, `Inf`, or `-Inf`
+- `NegativeValueError` if `value < 0` (negative displacement impossible)
 """
 mutable struct StrokeCapacity{U<:StrokeCapacityUnit}
     value::Float64
+
+    function StrokeCapacity{U}(value::Real) where {U<:StrokeCapacityUnit}
+        isfinite(value) || throw(InvalidValueError())
+        value >= 0.0    || throw(NegativeValueError())
+        new{U}(value)
+    end
 end
 
-# Constructors with validation (Task 4.0 extension to StrokeCapacity)
-"""
-    StrokeCapacity(v::Real, unit::StrokeCapacityUnit; digits=6)
-
-Construct pump displacement per stroke. Validates `v` is finite and ≥ 0.
-
-Parameters:
-- `v::Real`: Non-negative capacity value (liters per stroke or barrels per stroke)
-- `unit::StrokeCapacityUnit`: One of l_per_stk, bbl_per_stk
-- `digits::Int`: Rounding precision (default 6 for precision pumping data)
-
-Throws:
-- `InvalidValueError` if `v` is non-finite (`NaN`, `Inf`)
-- `NegativeValueError` if `v < 0` (negative displacement impossible)
-
-See PROJECT_SPEC.md §Phase 1, Task 4.0 — Failure Cases for StrokeCapacity.
-"""
-StrokeCapacity(v::Real, ::L_per_stk;   digits::Int=6) = isnothing(validate_value(v)) && StrokeCapacity{L_per_stk}(round(float(v); digits=digits))
-StrokeCapacity(v::Real, ::Bbl_per_stk; digits::Int=6) = isnothing(validate_value(v)) && StrokeCapacity{Bbl_per_stk}(round(float(v); digits=digits))
+# Constructor dispatch per unit type with optional rounding precision
+StrokeCapacity(v::Real, ::L_per_stk;   digits::Int=6) = StrokeCapacity{L_per_stk}(round(Float64(v); digits=digits))
+StrokeCapacity(v::Real, ::Bbl_per_stk; digits::Int=6) = StrokeCapacity{Bbl_per_stk}(round(Float64(v); digits=digits))
 
 Base.show(io::IO, c::StrokeCapacity{L_per_stk})   = print(io, "$(c.value) L/stk")
 Base.show(io::IO, c::StrokeCapacity{Bbl_per_stk}) = print(io, "$(c.value) bbl/stk")

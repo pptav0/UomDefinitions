@@ -52,11 +52,12 @@ export P_ATM
 
 # - Volume
 export VolumeUnit, Volume
-export M3, BBL, L, SCF, STK, m3, bbl, ltr, scf, stk
-export to_m3, to_bbl, to_ltr
+export L, M3, FT3, GAL, BBL,SCF, STK
+export ltr, m3, ft3, gal, bbl,  scf, stk
+export to_ltr, to_m3, to_ft3, to_gal, to_bbl, to_ltr
 export to_unit
-export FT3_PER_M3, M3_PER_FT3, L_PER_M3
-export L_PER_BBL, L_PER_GAL, GAL_PER_BBL
+export L_PER_M3, L_PER_FT3, FT3_PER_M3, M3_PER_FT3
+export L_PER_BBL, L_PER_GAL, GAL_PER_BBL, M3_PER_BBL
 
 # - Stroke capacity (pairs with Volume{STK})
 export StrokeCapacityUnit, StrokeCapacity
