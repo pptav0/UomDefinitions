@@ -36,7 +36,7 @@ export Uom
 export DiameterUnit, Diameter
 export IN, MM, D64, inch, mm, d64
 export to_in, to_mm, to_d64
-export MM_PER_IN, IN_PER_MM, D64_PER_IN
+export MM_PER_IN, CM_PER_IN, M_PER_IN, IN_PER_MM, D64_PER_IN
 
 # - Pump rates
 export PumpRateUnit, PumpRate

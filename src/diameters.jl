@@ -31,6 +31,8 @@ end
 
 # --- constants ---
 const MM_PER_IN = 25.4
+const CM_PER_IN = 2.54
+const M_PER_IN  = 0.0254
 const IN_PER_MM = 1 / MM_PER_IN
 
 # --- conversions ---
