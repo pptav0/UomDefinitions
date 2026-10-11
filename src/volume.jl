@@ -32,46 +32,33 @@ const scf  = SCF()
 const stk  = STK()
 
 """
-    Volume{U<:VolumeUnit}(value)
+    Volume{U<:VolumeUnit}(value::Real)
 
-Typed quantity for volumes pumped in cementing operations. Units: `M3`, `BBL`, `L`, `SCF`.
+Typed quantity for volumes pumped in cementing operations.
+Units: `M3`, `BBL`, `L`, `FT3`, `GAL`, `SCF`.
 
-Critical for tracking cement/spacer/fluid volumes throughout job schedules. All conversions
-must preserve precision to prevent cumulative errors in fluid positioning calculations.
+All conversions must preserve precision to prevent cumulative errors in fluid
+positioning calculations.
 
-Note: Volume values must be finite and non-negative (physical constraint). Zero volume
-is allowed but dangerous in capacity calculations (division by zero risk downstream).
-See PROJECT_SPEC.md §Phase 1, Task 4.0 for error handling requirements.
+Note: Volume values must be finite. Negative values are allowed (e.g., volume
+displacement changes). Zero volume is constructible but may cause division by
+zero in downstream capacity calculations.
+
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
 """
 mutable struct Volume{U<:VolumeUnit}
     value::Float64
+
+    function Volume{U}(value::Real) where {U<:VolumeUnit}
+        isfinite(value) || throw(InvalidValueError())
+        new{U}(value)
+    end
 end
 
-# Constructors with validation (following pattern from Tasks 1.0-3.0)
-# """
-#     Volume(v::Real, unit::VolumeUnit)
-#
-# Construct a volume with explicit unit tag. Validates `v` is finite and ≥ 0.
-#
-# Parameters:
-# - `v::Real`: Non-negative volume value
-# - `unit::VolumeUnit`: One of m³, bbl, ltr, scf
-#
-# Throws:
-# - `InvalidValueError` if `v` is `NaN`, `Inf`, or `-Inf`
-# - `NegativeValueError` if `v < 0` (negative volume is non-physical)
-#
-# See PROJECT_SPEC.md §Phase 1, Task 4.0 for validation requirements.
-# """
-function Volume(v::Real, ::U) where {U<:VolumeUnit}
-    validate_value(v)
-    Volume{U}(float(v))
-end
-
-function Volume(v::Real, ::STK)
-    validate_value(v)
-    Volume{STK}(round(float(v)))
-end
+# Constructor dispatch per unit type (STK requires integer rounding)
+Volume(v::Real, ::U) where {U<:VolumeUnit} = Volume{U}(Float64(v))
+Volume(v::Real, ::STK) = Volume{STK}(round(Int, Float64(v)))
 
 
 # ========= CONSTANTS & CONVERSIONS ===========================================
@@ -135,47 +122,13 @@ to_unit(v::Volume, ::GAL)  = to_gal(v)
 to_unit(v::Volume, ::BBL)  = to_bbl(v)
 
 # --- Pretty printing for Volume ----------------------------------------------
-Base.show(io::IO, v::Volume{L})     = print(io, "$(v.value) L")
-Base.show(io::IO, v::Volume{M3})    = print(io, "$(v.value) m³")
-Base.show(io::IO, v::Volume{FT3})   = print(io, "$(v.value) ft³")
-Base.show(io::IO, v::Volume{GAL})   = print(io, "$(v.value) gal")
-Base.show(io::IO, v::Volume{BBL})   = print(io, "$(v.value) bbl")
-Base.show(io::IO, v::Volume{SCF})   = print(io, "$(v.value) scf")
-Base.show(io::IO, v::Volume{STK})   = print(io, "$(round(Int, v.value)) stk")
-
-# Convenience numeric + unit constructors (mirroring to_xxx patterns)
-"Construct with explicit unit: Volume(value, unit)"
-to_ltr(v::Real, ::L)     = Volume(v, ltr)
-to_m3(v::Real,  ::M3)    = Volume(v, m3)
-to_ft3(v::Real, ::FT3)   = Volume(v, ft3)
-to_gal(v::Real, ::GAL)   = Volume(v, gal)
-to_bbl(v::Real, ::BBL)   = Volume(v, bbl)
-
-# Cross-unit convenience constructors: to_unit(value, target_unit)
-to_m3(v::Real, ::L)      = to_m3(Volume(v, ltr))
-to_m3(v::Real, ::FT3)    = to_m3(Volume(v, ft3))
-to_m3(v::Real, ::GAL)    = to_m3(Volume(v, gal))
-to_m3(v::Real, ::BBL)    = to_m3(Volume(v, bbl))
-
-to_bbl(v::Real, ::L)      = to_bbl(Volume(v, ltr))
-to_bbl(v::Real, ::M3)     = to_bbl(Volume(v, m3))
-to_bbl(v::Real, ::FT3)    = to_bbl(Volume(v, ft3))
-to_bbl(v::Real, ::GAL)    = to_bbl(Volume(v, gal))
-
-to_ltr(v::Real, ::M3)      = to_ltr(Volume(v, m3))
-to_ltr(v::Real, ::FT3)     = to_ltr(Volume(v, ft3))
-to_ltr(v::Real, ::GAL)     = to_ltr(Volume(v, gal))
-to_ltr(v::Real, ::BBL)     = to_ltr(Volume(v, bbl))
-
-to_ft3(v::Real, ::L)       = to_ft3(Volume(v, ltr))
-to_ft3(v::Real, ::M3)      = to_ft3(Volume(v, m3))
-to_ft3(v::Real, ::GAL)     = to_ft3(Volume(v, gal))
-to_ft3(v::Real, ::BBL)     = to_ft3(Volume(v, bbl))
-
-to_gal(v::Real, ::L)       = to_gal(Volume(v, ltr))
-to_gal(v::Real, ::M3)      = to_gal(Volume(v, m3))
-to_gal(v::Real, ::FT3)     = to_gal(Volume(v, ft3))
-to_gal(v::Real, ::BBL)     = to_gal(Volume(v, bbl))
+Base.show(io::IO, v::Volume{L})       = print(io, "$(v.value) L")
+Base.show(io::IO, v::Volume{M3})      = print(io, "$(v.value) m³")
+Base.show(io::IO, v::Volume{FT3})     = print(io, "$(v.value) ft³")
+Base.show(io::IO, v::Volume{GAL})     = print(io, "$(v.value) gal")
+Base.show(io::IO, v::Volume{BBL})     = print(io, "$(v.value) bbl")
+Base.show(io::IO, v::Volume{SCF})     = print(io, "$(v.value) scf")
+Base.show(io::IO, v::Volume{STK})     = print(io, "$(round(Int, v.value)) stk")
 
 # ========= STROKE CAPACITY (volume per stroke) ===============================
 """
