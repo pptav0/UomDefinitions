@@ -86,6 +86,8 @@ function validate_positive_value(v::Real)
         throw(InvalidValueError())
     elseif v < 0
         throw(NegativeValueError())
+    elseif iszero(v)
+        throw(ZeroValueError())
     end
 
     return nothing
