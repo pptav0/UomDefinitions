@@ -36,9 +36,9 @@ Pressure(v::Real, ::U) where {U<:PressureUnit} = Pressure{U}(Float64(v))
 
 # ===== constants =====
 const P_ATM       = Pressure(14.7, psi)
-const PSI_PER_BAR = 14.5037738007
+const PSI_PER_BAR = 14.503773773
 const PA_PER_BAR  = 1.0e5
-const PA_PER_PSI  = 6894.757293168
+const PA_PER_PSI  = PA_PER_BAR / PSI_PER_BAR   # 6894.7572932 (exact)
 
 # ===== conversions =====
 

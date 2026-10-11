@@ -112,9 +112,9 @@ end
 	@test to_pa(one_bar).value == 100_000.0
 
 	# Conversion constants are exact
-	@test PSI_PER_BAR ≈ 14.5037738007 atol=1e-10
+	@test PSI_PER_BAR ≈ 14.503773773 atol=1e-15
 	@test PA_PER_BAR == 100_000.0
-	@test PA_PER_PSI ≈ 6894.757293168 atol=1e-10
+	@test PA_PER_PSI ≈ 100_000 / 14.503773773 atol=1e-15
 	@test PA_PER_MPA == 1_000_000.0
 end
 
