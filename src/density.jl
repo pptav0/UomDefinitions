@@ -14,36 +14,27 @@ const kg_m3 = KG_M3()
 const sg    = SG()
 
 """
-    Density{U<:DensityUnit}(value)
+    Density{U<:DensityUnit}(value::Real)
 
 Typed quantity for fluid / slurry densities. Units: `PPG`, `KG_M3`, `SG`.
-
-The `SG` reference is **1000 kg/m³** (industry convention), so `SG * 8.3454
-≈ ppg` and `SG * 1000 = kg/m³` by construction.
-
 Note: Density values must be finite and non-negative (physical densities).
-See PROJECT_SPEC.md §Phase 1, Task 3.0 for error handling requirements.
+
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`\
+- `NegativeValueError` if `value < 0` (negative density is impossible)
 """
 mutable struct Density{U<:DensityUnit}
     value::Float64
+
+    function Density{U}(value::Real) where {U<:DensityUnit}
+        isfinite(value) || throw(InvalidValueError())
+        value >= 0.0    || throw(NegativeValueError())
+        new{U}(value)
+    end
 end
 
-# Constructors with validation (following pattern from Tasks 1.0 & 2.0)
-"""
-    Density(v::Real, unit::DensityUnit)
-
-Construct a density with explicit unit tag. Validates `v` is finite and ≥ 0.
-
-Throws:
-- `InvalidValueError` if `v` is `NaN`, `Inf`, or `-Inf`
-- `NegativeValueError` if `v < 0` (negative density is non-physical)
-
-See PROJECT_SPEC.md §Phase 1, Task 3.0 for validation requirements.
-"""
-function Density(v::Real, ::U) where {U<:DensityUnit}
-    validate_value(v)
-    Density{U}(float(v))
-end
+# Constructor dispatch per unit type (STK requires integer rounding)
+Density(v::Real, ::U) where {U<:DensityUnit} = Density{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
 "SG reference density (industry convention, not physical water mass)"
