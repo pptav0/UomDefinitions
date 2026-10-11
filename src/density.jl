@@ -50,9 +50,9 @@ const PPG_PER_SG    = KG_M3_PER_SG / KG_M3_PER_PPG
 
 Convert a `Density{PPG|KG_M3|SG}` to **pounds per US gallon**.
 """
-to_ppg(d::Density{PPG})   = d
-to_ppg(d::Density{KG_M3}) = Density{PPG}(d.value / KG_M3_PER_PPG)
-to_ppg(d::Density{SG})    = Density{PPG}(d.value * PPG_PER_SG)
+to_ppg(d::Density{PPG})     = d
+to_ppg(d::Density{KG_M3})   = Density{PPG}(d.value / KG_M3_PER_PPG)
+to_ppg(d::Density{SG})      = Density{PPG}(d.value * PPG_PER_SG)
 
 """
     to_kg_m3(d::Density) -> Density{KG_M3}
@@ -68,22 +68,22 @@ to_kg_m3(d::Density{SG})    = Density{KG_M3}(d.value * KG_M3_PER_SG)
 
 Convert a `Density{PPG|KG_M3|SG}` to **specific gravity** (ref 1000 kg/m³).
 """
-to_sg(d::Density{SG})    = d
-to_sg(d::Density{KG_M3}) = Density{SG}(d.value / KG_M3_PER_SG)
-to_sg(d::Density{PPG})   = Density{SG}(d.value / PPG_PER_SG)
+to_sg(d::Density{SG})       = d
+to_sg(d::Density{KG_M3})    = Density{SG}(d.value / KG_M3_PER_SG)
+to_sg(d::Density{PPG})      = Density{SG}(d.value / PPG_PER_SG)
 
 # Convenience numeric + unit singletons
-to_ppg(v::Real, ::PPG)   = Density(v, ppg)
-to_ppg(v::Real, ::KG_M3) = to_ppg(Density(v, kg_m3))
-to_ppg(v::Real, ::SG)    = to_ppg(Density(v, sg))
+to_ppg(v::Real, ::PPG)      = Density(v, ppg)
+to_ppg(v::Real, ::KG_M3)    = to_ppg(Density(v, kg_m3))
+to_ppg(v::Real, ::SG)       = to_ppg(Density(v, sg))
 
-to_kg_m3(v::Real, ::KG_M3) = Density(v, kg_m3)
-to_kg_m3(v::Real, ::PPG)   = to_kg_m3(Density(v, ppg))
-to_kg_m3(v::Real, ::SG)    = to_kg_m3(Density(v, sg))
+to_kg_m3(v::Real, ::KG_M3)  = Density(v, kg_m3)
+to_kg_m3(v::Real, ::PPG)    = to_kg_m3(Density(v, ppg))
+to_kg_m3(v::Real, ::SG)     = to_kg_m3(Density(v, sg))
 
-to_sg(v::Real, ::SG)    = Density(v, sg)
-to_sg(v::Real, ::PPG)   = to_sg(Density(v, ppg))
-to_sg(v::Real, ::KG_M3) = to_sg(Density(v, kg_m3))
+to_sg(v::Real, ::SG)        = Density(v, sg)
+to_sg(v::Real, ::PPG)       = to_sg(Density(v, ppg))
+to_sg(v::Real, ::KG_M3)     = to_sg(Density(v, kg_m3))
 
 # ========= PRETTY PRINTING ===================================================
 Base.show(io::IO, d::Density{PPG})   = print(io, "$(d.value) ppg")
