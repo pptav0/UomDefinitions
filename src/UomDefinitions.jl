@@ -9,6 +9,7 @@ abstract type Uom end
 "Convert a quantity to the unit given as a singleton; one method set per family."
 function to_unit end
 
+include("./errors.jl")      # error handling
 include("./diameters.jl")
 include("./pressure.jl")
 include("./pump_rates.jl")
@@ -18,11 +19,15 @@ include("./conc_liquids.jl")
 include("./length.jl")
 include("./temperature.jl")
 include("./density.jl")
-include("./capacity.jl")   # needs volume, pump_rates, length constants
+include("./capacity.jl")      # needs volume, pump_rates, length constants
 include("./area.jl")          # needs MM_PER_IN, M_PER_FT
 include("./mass.jl")          # needs KG_PER_LB, LB_PER_KG
 include("./acceleration.jl")  # needs M_PER_FT; defines GRAVITY
 include("./forces.jl")        # needs Pressure, Area, Density, Volume, Mass, Acceleration
+
+
+# Error types for diameter validation (Phase 1 Task 1.0)
+export NegativeValueError, ZeroValueError, InvalidValueError
 
 # re-export everything you want public
 export Uom
