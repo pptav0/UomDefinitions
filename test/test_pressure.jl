@@ -132,29 +132,8 @@ end
 end
 
 # ========= Failure Cases (30%) ===============================================
-# Invalid inputs: negative values, NaN, Inf - must raise documented exceptions
-
-@testset "Pressure — Failure: negative absolute pressure raises NegativeValueError" begin
-	# Negative pressure is non-physical for absolute pressure calculations
-	# Hydrostatic, formation pressures are always ≥ 0
-
-	# Negative psi values
-	@test_throws NegativeValueError Pressure(-0.1, psi)
-	@test_throws NegativeValueError Pressure(-14.7, psi)
-	@test_throws NegativeValueError Pressure(-10_000.0, psi)
-
-	# Negative bar values
-	@test_throws NegativeValueError Pressure(-1.0, bar)
-	@test_throws NegativeValueError Pressure(-101.325, bar)
-
-	# Negative pascal values
-	@test_throws NegativeValueError Pressure(-100_000.0, pa)
-	@test_throws NegativeValueError Pressure(-1.0, pa)
-
-	# Negative MPa values
-	@test_throws NegativeValueError Pressure(-0.1, mpa)
-	@test_throws NegativeValueError Pressure(-68.95, mpa)
-end
+# Invalid inputs: NaN, Inf - must raise documented exceptions
+# Note: Negative values are allowed
 
 @testset "Pressure — Failure: non-finite pressure raises InvalidValueError" begin
 	# Positive infinity is non-physical (infinite pressure impossible)

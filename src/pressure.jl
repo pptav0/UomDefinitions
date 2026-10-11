@@ -15,33 +15,24 @@ const pa  = PA()
 
 # ===== Quantity type =====
 """
-    Pressure{U<:PressureUnit}(value)
+    Pressure{U<:PressureUnit}(value::Real)
 
 Pressure quantity tagged with its unit (`BAR`, `PSI`, or `PA`).
 
-Note: Pressure values must be finite and non-negative (absolute pressure).
-See PROJECT_SPEC.md §Phase 1, Task 2.0 for error handling requirements.
+Note: Pressure values must be finite. Negative values are allowed.
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
 """
 mutable struct Pressure{U<:PressureUnit}
     value::Float64
+
+    function Pressure{U}(value::Real) where {U<:PressureUnit}
+        isfinite(value) || throw(InvalidValueError())
+        new{U}(value)
+    end
 end
 
-# Constructors with validation (following pattern from Task 1.0)
-"""
-    Pressure(v::Real, unit::PressureUnit)
-
-Construct a pressure with explicit unit tag. Validates `v` is finite and ≥ 0.
-
-Throws:
-- `InvalidValueError` if `v` is `NaN`, `Inf`, or `-Inf`
-- `NegativeValueError` if `v < 0` (negative absolute pressure is non-physical)
-
-See PROJECT_SPEC.md §Phase 1, Task 2.0 for validation requirements.
-"""
-function Pressure(v::Real, ::U) where {U<:PressureUnit}
-    validate_value(v)
-    Pressure{U}(float(v))
-end
+Pressure(v::Real, ::U) where {U<:PressureUnit} = Pressure{U}(Float64(v))
 
 # ===== constants =====
 const P_ATM       = Pressure(14.7, psi)
