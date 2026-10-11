@@ -20,21 +20,35 @@ Typed quantity for fluid / slurry densities. Units: `PPG`, `KG_M3`, `SG`.
 
 The `SG` reference is **1000 kg/m³** (industry convention), so `SG * 8.3454
 ≈ ppg` and `SG * 1000 = kg/m³` by construction.
+
+Note: Density values must be finite and non-negative (physical densities).
+See PROJECT_SPEC.md §Phase 1, Task 3.0 for error handling requirements.
 """
 mutable struct Density{U<:DensityUnit}
     value::Float64
 end
 
-# ergonomic constructors
-Density(v::Real, ::PPG)   = Density{PPG}(float(v))
-Density(v::Real, ::KG_M3) = Density{KG_M3}(float(v))
-Density(v::Real, ::SG)    = Density{SG}(float(v))
+# Constructors with validation (following pattern from Tasks 1.0 & 2.0)
+"""
+    Density(v::Real, unit::DensityUnit)
+
+Construct a density with explicit unit tag. Validates `v` is finite and ≥ 0.
+
+Throws:
+- `InvalidValueError` if `v` is `NaN`, `Inf`, or `-Inf`
+- `NegativeValueError` if `v < 0` (negative density is non-physical)
+
+See PROJECT_SPEC.md §Phase 1, Task 3.0 for validation requirements.
+"""
+Density(v::Real, ::PPG)   = isnothing(validate_value(v)) && Density{PPG}(float(v))
+Density(v::Real, ::KG_M3) = isnothing(validate_value(v)) && Density{KG_M3}(float(v))
+Density(v::Real, ::SG)    = isnothing(validate_value(v)) && Density{SG}(float(v))
 
 # ========= CONSTANTS =========================================================
-"1 ppg expressed in kg/m³ — derived: KG_PER_LB * L_PER_M3 / L_PER_GAL ≈ 119.826427"
-const KG_M3_PER_PPG = KG_PER_LB * L_PER_M3 / L_PER_GAL
 "SG reference density (industry convention, not physical water mass)"
 const KG_M3_PER_SG  = 1000.0
+"1 ppg expressed in kg/m³ — derived: KG_PER_LB * L_PER_M3 / L_PER_GAL ≈ 119.826427"
+const KG_M3_PER_PPG = KG_PER_LB * L_PER_M3 / L_PER_GAL
 "1 SG expressed in ppg — derived: KG_M3_PER_SG / KG_M3_PER_PPG ≈ 8.345404"
 const PPG_PER_SG    = KG_M3_PER_SG / KG_M3_PER_PPG
 
