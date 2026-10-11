@@ -7,9 +7,11 @@ struct M3  <: VolumeUnit end
 struct L   <: VolumeUnit end
 "cubic foot"
 struct FT3 <: VolumeUnit end
+"US liquid gallon"
+struct GAL <: VolumeUnit end
 "barrels (oilfield bbl)"
 struct BBL <: VolumeUnit end
-"standard cubic feet"
+"standard cubic feet for gas volume"
 struct SCF <: VolumeUnit end
 
 """
@@ -21,12 +23,13 @@ Converting to m³/bbl/L requires a [`StrokeCapacity`](@ref) — see `to_m3(::Vol
 """
 struct STK <: VolumeUnit end
 
-const m3  = M3()
-const ltr = L()
-const ft3 = FT3()
-const bbl = BBL()
-const scf = SCF()
-const stk = STK()
+const m3   = M3()
+const ltr  = L()
+const ft3  = FT3()
+const gal  = GAL()
+const bbl  = BBL()
+const scf  = SCF()
+const stk  = STK()
 
 """
     Volume{U<:VolumeUnit}(value)
@@ -84,37 +87,95 @@ const GAL_PER_FT3   = L_PER_BBL / GAL_PER_BBL
 
 # --- Conversion helpers ------------------------------------------------------
 
+"Convert to liters"
+to_ltr(v::Volume{L})     = v
+to_ltr(v::Volume{M3})    = Volume(v.value * L_PER_M3, ltr)
+to_ltr(v::Volume{FT3})   = Volume(v.value * L_PER_FT3, ltr)
+to_ltr(v::Volume{GAL})   = Volume(v.value * L_PER_GAL, ltr)
+to_ltr(v::Volume{BBL})   = Volume(v.value * L_PER_BBL, ltr)
+
 "Convert to cubic meters"
-to_m3(v::Volume{M3})  = v
-to_m3(v::Volume{BBL}) = Volume(v.value * L_PER_BBL / L_PER_M3, m3)
-to_m3(v::Volume{L})   = Volume(v.value / L_PER_M3, m3)
+to_m3(v::Volume{M3})    = v
+to_m3(v::Volume{FT3})   = Volume(v.value * M3_PER_FT3, m3)
+to_m3(v::Volume{GAL})   = Volume(v.value * L_PER_GAL / L_PER_M3, m3)
+to_m3(v::Volume{BBL})   = Volume(v.value * L_PER_BBL / L_PER_M3, m3)
+to_m3(v::Volume{L})     = Volume(v.value / L_PER_M3, m3)
+
+"Convert to cubic feet"
+to_ft3(v::Volume{FT3})   = v
+to_ft3(v::Volume{GAL})   = Volume(v.value / GAL_PER_FT3, ft3)
+to_ft3(v::Volume{BBL})   = Volume(v.value * FT3_PER_BBL, ft3)
+to_ft3(v::Volume{L})     = Volume(v.value / L_PER_FT3, ft3)
+to_ft3(v::Volume{M3})    = Volume(v.value * FT3_PER_M3, ft3)
+
+"Convert to gallons (US liquid)"
+to_gal(v::Volume{GAL})   = v
+to_gal(v::Volume{BBL})   = Volume(v.value * GAL_PER_BBL, gal)
+to_gal(v::Volume{L})     = Volume(v.value / L_PER_GAL, gal)
+to_gal(v::Volume{M3})    = Volume(v.value * L_PER_M3 / L_PER_GAL, gal)
+to_gal(v::Volume{FT3})   = Volume(v.value * GAL_PER_FT3, gal)
 
 "Convert to barrels"
-to_bbl(v::Volume{BBL}) = v
-to_bbl(v::Volume{M3})  = Volume(v.value * L_PER_M3 / L_PER_BBL, bbl)
-to_bbl(v::Volume{L})   = Volume(v.value / L_PER_BBL, bbl)
-
-"Convert to liters"
-to_ltr(v::Volume{L})   = v
-to_ltr(v::Volume{M3})  = Volume(v.value * L_PER_M3, ltr)
-to_ltr(v::Volume{BBL}) = Volume(v.value * L_PER_BBL, ltr)
+to_bbl(v::Volume{BBL})  = v
+to_bbl(v::Volume{L})     = Volume(v.value / L_PER_BBL, bbl)
+to_bbl(v::Volume{M3})    = Volume(v.value * L_PER_M3 / L_PER_BBL, bbl)
+to_bbl(v::Volume{FT3})   = Volume(v.value / FT3_PER_BBL, bbl)
+to_bbl(v::Volume{GAL})   = Volume(v.value / GAL_PER_BBL, bbl)
 
 """
     to_unit(v::Volume, u::VolumeUnit) -> Volume
 
-Convert to the unit given as a singleton (`m3`, `bbl`, `ltr`).
+Convert to the unit given as a singleton (`m3`, `bbl`, `ltr`, `ft3`, `gal`, `scf`, `stk`).
 Lets callers select the output unit with a keyword argument.
 """
-to_unit(v::Volume, ::M3)  = to_m3(v)
-to_unit(v::Volume, ::BBL) = to_bbl(v)
-to_unit(v::Volume, ::L)   = to_ltr(v)
+to_unit(v::Volume, ::L)    = to_ltr(v)
+to_unit(v::Volume, ::M3)   = to_m3(v)
+to_unit(v::Volume, ::FT3)  = to_ft3(v)
+to_unit(v::Volume, ::GAL)  = to_gal(v)
+to_unit(v::Volume, ::BBL)  = to_bbl(v)
 
 # --- Pretty printing for Volume ----------------------------------------------
-Base.show(io::IO, v::Volume{M3})  = print(io, "$(v.value) m³")
-Base.show(io::IO, v::Volume{BBL}) = print(io, "$(v.value) bbl")
-Base.show(io::IO, v::Volume{L})   = print(io, "$(v.value) L")
-Base.show(io::IO, v::Volume{SCF}) = print(io, "$(v.value) scf")
-Base.show(io::IO, v::Volume{STK}) = print(io, "$(round(Int, v.value)) stk")
+Base.show(io::IO, v::Volume{L})     = print(io, "$(v.value) L")
+Base.show(io::IO, v::Volume{M3})    = print(io, "$(v.value) m³")
+Base.show(io::IO, v::Volume{FT3})   = print(io, "$(v.value) ft³")
+Base.show(io::IO, v::Volume{GAL})   = print(io, "$(v.value) gal")
+Base.show(io::IO, v::Volume{BBL})   = print(io, "$(v.value) bbl")
+Base.show(io::IO, v::Volume{SCF})   = print(io, "$(v.value) scf")
+Base.show(io::IO, v::Volume{STK})   = print(io, "$(round(Int, v.value)) stk")
+
+# Convenience numeric + unit constructors (mirroring to_xxx patterns)
+"Construct with explicit unit: Volume(value, unit)"
+to_ltr(v::Real, ::L)     = Volume(v, ltr)
+to_m3(v::Real,  ::M3)    = Volume(v, m3)
+to_ft3(v::Real, ::FT3)   = Volume(v, ft3)
+to_gal(v::Real, ::GAL)   = Volume(v, gal)
+to_bbl(v::Real, ::BBL)   = Volume(v, bbl)
+
+# Cross-unit convenience constructors: to_unit(value, target_unit)
+to_m3(v::Real, ::L)      = to_m3(Volume(v, ltr))
+to_m3(v::Real, ::FT3)    = to_m3(Volume(v, ft3))
+to_m3(v::Real, ::GAL)    = to_m3(Volume(v, gal))
+to_m3(v::Real, ::BBL)    = to_m3(Volume(v, bbl))
+
+to_bbl(v::Real, ::L)      = to_bbl(Volume(v, ltr))
+to_bbl(v::Real, ::M3)     = to_bbl(Volume(v, m3))
+to_bbl(v::Real, ::FT3)    = to_bbl(Volume(v, ft3))
+to_bbl(v::Real, ::GAL)    = to_bbl(Volume(v, gal))
+
+to_ltr(v::Real, ::M3)      = to_ltr(Volume(v, m3))
+to_ltr(v::Real, ::FT3)     = to_ltr(Volume(v, ft3))
+to_ltr(v::Real, ::GAL)     = to_ltr(Volume(v, gal))
+to_ltr(v::Real, ::BBL)     = to_ltr(Volume(v, bbl))
+
+to_ft3(v::Real, ::L)       = to_ft3(Volume(v, ltr))
+to_ft3(v::Real, ::M3)      = to_ft3(Volume(v, m3))
+to_ft3(v::Real, ::GAL)     = to_ft3(Volume(v, gal))
+to_ft3(v::Real, ::BBL)     = to_ft3(Volume(v, bbl))
+
+to_gal(v::Real, ::L)       = to_gal(Volume(v, ltr))
+to_gal(v::Real, ::M3)      = to_gal(Volume(v, m3))
+to_gal(v::Real, ::FT3)     = to_gal(Volume(v, ft3))
+to_gal(v::Real, ::BBL)     = to_gal(Volume(v, bbl))
 
 # ========= STROKE CAPACITY (volume per stroke) ===============================
 """

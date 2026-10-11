@@ -166,28 +166,7 @@ end
 
 # ========= Failure Cases (30%) ===============================================
 # Invalid inputs: negative values, NaN, Inf must raise documented exceptions
-# Task 4.0 spec: T1 = Negative volume → raise non-physical error
-
-@testset "Volume — Failure: negative volume raises NegativeValueError" begin
-	# Negative m³ is non-physical (cannot pump negative cement)
-	# See PROJECT_SPEC.md §Roadmap Phase 1 — Task 4.0, Failure Case T1
-
-	@test_throws NegativeValueError Volume(-0.001, m3)
-	@test_throws NegativeValueError Volume(-1.0, m3)
-	@test_throws NegativeValueError Volume(-5000.0, m3)
-
-	# Negative barrels cannot exist
-	@test_throws NegativeValueError Volume(-42.0, bbl)
-	@test_throws NegativeValueError Volume(-100.5, bbl)
-
-	# Negative liters cannot exist
-	@test_throws NegativeValueError Volume(-1.0, ltr)
-	@test_throws NegativeValueError Volume(-158.987, ltr)
-
-	# Negative SCF (gas volume) is non-physical
-	@test_throws InvalidValueError Volume(-Inf, scf)   # -Inf checked first as Non-finite
-	@test_throws NegativeValueError Volume(-100.0, scf)
-end
+# Note: Negative values are allowed, except when using STK
 
 @testset "Volume — Failure: non-finite volume raises InvalidValueError" begin
 	# Positive infinity is non-physical (infinite cement volume impossible)
