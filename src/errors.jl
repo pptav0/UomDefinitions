@@ -36,6 +36,18 @@ struct ZeroValueError <: Exception end
 Base.showerror(io::IO, ::ZeroValueError) =
     print(io, "ZeroValueError: zero is invalid in this context")
 
+"""
+    BelowAbsoluteZeroError
+
+Thrown when a temperature value falls below absolute zero (0 K / -273.15°C).
+
+Unlike NegativeValueError, negative temperatures in °C or °F are physically valid —
+only values below 0 Kelvin (physically impossible) trigger this error.
+"""
+struct BelowAbsoluteZeroError <: Exception end
+
+Base.showerror(io::IO, ::BelowAbsoluteZeroError) =
+    print(io, "BelowAbsoluteZeroError: temperature cannot be below absolute zero (0 K / -273.15°C)")
 
 # ------------------------------------------------------------------
 # Validation helpers

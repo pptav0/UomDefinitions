@@ -16,25 +16,41 @@ const degF   = DEGF()
 const degC   = DEGC()
 const kelvin = KELVIN()
 
+# Per-unit below-absolute-zero threshold: returns true iff the value is at or below absolute zero.
+_below_abs_zero(::DEGF, v::Float64)   = v < -ZERO_F_IN_R    # −459.67 °F
+_below_abs_zero(::DEGC, v::Float64)   = v < -ZERO_C_IN_K    # −273.15 °C
+_below_abs_zero(::KELVIN, v::Float64) = v < 0               # 0 K
+
+# ========= QUANTITY TYPE =====================================================
+
 """
-    Temperature{U<:TemperatureUnit}(value)
+    Temperature{U<:TemperatureUnit}(value::Real)
 
 Typed quantity for temperatures. Units: `DEGF`, `DEGC`, `KELVIN`.
 
 !!! warning "Offset conversions"
     Temperature differences are not the same as absolute temperatures.
-    `to_degC(Temperature(32.0, degF))` returns 0 °C (absolute); converting
+     `to_degC(Temperature(32.0, degF))` returns 0 °C (absolute); converting
     a *delta* would use only the scale factor (5/9), which is not provided
     here deliberately — this type represents absolute temperatures.
+
+Note: values must be finite and at or above absolute zero for the given unit.
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
+- `BelowAbsoluteZeroError` otherwise (depends on unit context)
 """
 mutable struct Temperature{U<:TemperatureUnit}
     value::Float64
+
+    function Temperature{U}(value::Real) where {U<:TemperatureUnit}
+        isfinite(value)::Bool || throw(InvalidValueError())
+         _below_abs_zero(U(), Float64(value)) && throw(BelowAbsoluteZeroError())
+        new{U}(Float64(value))
+    end
 end
 
-# ergonomic constructors
-Temperature(v::Real, ::DEGF)   = Temperature{DEGF}(float(v))
-Temperature(v::Real, ::DEGC)   = Temperature{DEGC}(float(v))
-Temperature(v::Real, ::KELVIN) = Temperature{KELVIN}(float(v))
+# Ergonomic numeric + unit dispatcher (matches pressure.jl pattern)
+Temperature(v::Real, ::U) where {U<:TemperatureUnit} = Temperature{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
 "zero of the Celsius scale expressed in kelvin"
