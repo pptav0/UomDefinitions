@@ -69,6 +69,7 @@ end
         @test to_gpm(PumpRate(v, gpm)).value ≈ v atol=min(1e-9*v, 1.0)
     end
 end
+
 # ===== T-6.3: Edge Cases (~20 assertions) =====
 @testset "PumpRate — Edge Cases" begin
     # E1-E3: Near-zero rates construct without error (below standard bounds)
@@ -83,11 +84,11 @@ end
 
     # E7-E9: Round-trip near-zero preserves order-of-magnitude (self-identity)
     r_a = PumpRate(1e-8, bpm)
-    @test to_bpm(r_a).value == 1e-8       # BPM→BPM identity
+    @test to_bpm(r_a).value == 1e-8        # BPM→BPM identity
     r_b = PumpRate(1e-5, lpm)
-    @test to_lpm(r_b).value == 1e-5       # LPM→LPM identity
+    @test to_lpm(r_b).value == 1e-5        # LPM→LPM identity
     r_c = PumpRate(5e-7, gpm)
-    @test to_gpm(r_c).value == 5e-7       # GPM→GPM identity
+    @test to_gpm(r_c).value == 5e-7        # GPM→GPM identity
 
     # E10-E12: Round-trip large values preserves order-of-magnitude (self-identity)
     r_lb = PumpRate(5_000.0, bpm)
@@ -130,7 +131,7 @@ end
 
     np_gpm = PumpRate(-0.0, gpm)
     pz_gpm = PumpRate( 0.0, gpm)
-    @test np_gpm.value == pz_gpm.value            # IEEE: -0.0 == +0.0
+    @test np_gpm.value == pz_gpm.value           # IEEE: -0.0 == +0.0
 end
 
 # ===== T-6.4: Failure Cases (~18 assertions) =====
