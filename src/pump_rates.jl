@@ -10,23 +10,31 @@ const lpm = LPM()
 const gpm = GPM()
 
 # ---------- Quantity tagged with its unit ----------
-"""
-    PumpRate{U<:PumpRateUnit}(value)
 
-A cement pump rate tagged with a unit (`BPM` or `LPM`).
+"""
+    PumpRate{U<:PumpRateUnit}(value::Real)
+
+A cement pump rate tagged with a unit (``BPM``, ``LPM``, or ``GPM``).
+
+Note: values must be finite and non-negative. Zero is allowed (idle state).
+Throws:
+- ``InvalidValueError`` if ``value`` is ``NaN``, ``Inf``, or ``-Inf``
+- ``NegativeValueError`` if ``value`` is negative
 """
 mutable struct PumpRate{U<:PumpRateUnit}
     value::Float64
 
-    # function PumpRate(x::Real, ::U) where {U<:PumpRateUnit}
-    #     new{U}(float(x))
-    # end
+    function PumpRate{U}(value::Real) where {U<:PumpRateUnit}
+        isfinite(value) || throw(InvalidValueError())
+        value < 0 && throw(NegativeValueError())     # zero allowed (idle state)
+        new{U}(float(value))
+    end
 end
 
-# ergonomic constructors
-PumpRate(v::Real, ::BPM) = PumpRate{BPM}(float(v))
-PumpRate(v::Real, ::LPM) = PumpRate{LPM}(float(v))
-PumpRate(v::Real, ::GPM) = PumpRate{GPM}(float(v))
+# Ergonomic helpers delegate to inner constructor — no separate validation
+PumpRate(v::Real, ::BPM) = PumpRate{BPM}(Float64(v))
+PumpRate(v::Real, ::LPM) = PumpRate{LPM}(Float64(v))
+PumpRate(v::Real, ::GPM) = PumpRate{GPM}(Float64(v))
 
 # ---------- Conversions ----------
 """
