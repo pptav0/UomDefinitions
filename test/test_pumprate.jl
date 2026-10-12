@@ -163,5 +163,36 @@ end
     @test        PumpRate(1e-15, lpm).value == 1e-15
 
     @test_throws NegativeValueError PumpRate(-1e-15, gpm)
-    @test        PumpRate(1e-15, gpm).value == 1e-15
+    @test        PumpRate( 1e-15, gpm).value == 1e-15
+end
+
+# ===== T-6.5: Integration — Round-Trip Integrity + Multi-Stage Chains (~18 assertions) =====
+@testset "PumpRate — Integration" begin
+    # Short chains (3-stage round-trip) with three base rates
+    for base_val in [0.1, 50.0, 999.9]
+        # Chain 1: BPM → LPM → GPM → BPM (atol=1e-6)
+        r_bpm = PumpRate(base_val, bpm)
+        @test to_bpm(to_gpm(to_lpm(r_bpm))).value ≈ base_val atol=1e-6
+
+        # Chain 2: LPM → BPM → GPM → LPM (atol=1e-6)
+        r_lpm = PumpRate(base_val, lpm)
+        @test to_lpm(to_gpm(to_bpm(r_lpm))).value ≈ base_val atol=1e-6
+
+        # Chain 3: GPM → BPM → LPM → GPM (atol=1e-4, coarser due to conversion factors)
+        r_gpm = PumpRate(base_val, gpm)
+        @test to_gpm(to_lpm(to_bpm(r_gpm))).value ≈ base_val atol=1e-6
+    end
+
+    # Long chain (6+ stages): BPM→LPM→GPM→BPM→LPM→GPM→BPM (atol=1e-3)
+    r_long = PumpRate(75.0, bpm)
+    chain_6_hop = to_bpm(to_gpm(to_lpm(to_bpm(to_gpm(to_lpm(r_long))))))
+    @test chain_6_hop.value ≈ 75.0 atol=1e-6     # accumulated FP error over 6 conversions
+
+    r_long_2 = PumpRate(1000.0, lpm)
+    chain_6_hop_l = to_lpm(to_bpm(to_gpm(to_lpm(to_bpm(to_gpm(r_long_2))))))
+    @test chain_6_hop_l.value ≈ 1_000 atol=1e-6   # larger base value needs slightly looser tolerance
+
+    r_long_3 = PumpRate(50.0, gpm)
+    chain_6_hop_g = to_gpm(to_lpm(to_bpm(to_gpm(to_lpm(to_bpm(r_long_3))))))
+    @test chain_6_hop_g.value ≈ 50.0 atol=1e-6    # symmetric with BPM chain
 end
