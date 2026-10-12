@@ -83,19 +83,19 @@ end
 
     # E7-E9: Round-trip near-zero preserves order-of-magnitude (self-identity)
     r_a = PumpRate(1e-8, bpm)
-    @test to_bpm(r_a).value ≈ 1e-8 atol=eps()*1e8+1e-12      # BPM→BPM identity
+    @test to_bpm(r_a).value == 1e-8       # BPM→BPM identity
     r_b = PumpRate(1e-5, lpm)
-    @test to_lpm(r_b).value ≈ 1e-5 atol=eps()*1e5+1e-9       # LPM→LPM identity
+    @test to_lpm(r_b).value == 1e-5       # LPM→LPM identity
     r_c = PumpRate(5e-7, gpm)
-    @test to_gpm(r_c).value ≈ 5e-7 atol=eps()*5e6+1e-11      # GPM→GPM identity
+    @test to_gpm(r_c).value == 5e-7       # GPM→GPM identity
 
     # E10-E12: Round-trip large values preserves order-of-magnitude (self-identity)
     r_lb = PumpRate(5_000.0, bpm)
-    @test to_bpm(r_lb).value ≈ 5_000 atol=eps()*5e3+1e-6     # BPM→BPM
+    @test to_bpm(r_lb).value == 5_000      # BPM→BPM
     r_ll = PumpRate(80_000.0, lpm)
-    @test to_lpm(r_ll).value ≈ 80_000 atol=eps()*8e4+1e-6    # LPM→LPM
+    @test to_lpm(r_ll).value == 80_000     # LPM→LPM
     r_gb = PumpRate(25_000.0, gpm)
-    @test to_gpm(r_gb).value ≈ 25_000 atol=eps()*2.5e4+1e-6  # GPM→GPM
+    @test to_gpm(r_gb).value == 25_000     # GPM→GPM
 
     # E13: BPM→LPM→GPM→BPM four-hop cycle (accumulated FP error ~6e-4)
     r_bpm = PumpRate(7.5, bpm)
