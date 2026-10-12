@@ -135,4 +135,61 @@ end
       @test_throws InvalidValueError          Temperature(-Inf,  degF)
 end
 
-# ============================================================================
+# ===========================================================================
+# T-5.6  Round-Trip Integration — Multi-Stage Chains (~8 assertions)
+# ================================================================================
+@testset "Temperature — round-trip integration" begin
+    # Chain 1: °F → °C → K → °F (3-stage, standard values)
+    for v in [32.0, 212.0, -40.0, 98.6]
+        t = Temperature(v, degF)
+        @test to_degF(to_degC(to_kelvin(t))).value ≈ v atol=1e-9
+    end
+
+    # Chain 2: K → °F → °C → K (different order, tests non-exact commutativity bound)
+    for v in [0.0, 273.15, 373.15]
+        t = Temperature(v, kelvin)
+        @test to_kelvin(to_degF(to_degC(t))).value ≈ v atol=1e-9
+    end
+
+    # Chain 3: crossover path — °C → K → °F → °C passes through −40 point
+    for v in [-273.14, -40.0, 100.0]
+        t = Temperature(v, degC)
+        @test to_degC(to_kelvin(to_degF(t))).value ≈ v atol=1e-9
+    end
+
+    # Long chain (6+ stages): degenerates through °F↔K↔°C↔K repeating
+    t = Temperature(500.0, degF)
+    @test to_degF(to_kelvin(to_degC(to_kelvin(to_degF(to_degC(t)))))).value ≈ 500.0 atol=1e-8
+end
+
+# ================================================================================
+# T-5.7  Rankine Edge Cases — derived-only Float64 (~7 assertions)
+# ================================================================================
+@testset "Temperature — rankine edges" begin
+    # At absolute zero: to_rankine of 0 K == 0°R (no struct, just bare Float64)
+    @test to_rankine(Temperature(0.0, kelvin))     ≈ 0.0 atol=1e-9
+
+    # Near-abs-zero Kelvin → near-zero Rankine (within float tolerance)
+    @test to_rankine(Temperature(0.001, kelvin))   ≈ 0.0018 atol=1e-4
+
+    # Below-absolute-zero is already caught by the constructor — this validates no sneaky NaN propagates
+    # through conversions when passing a Temperature that was constructed at exactly 0 K
+    @test !isnan(to_rankine(Temperature(0.0, kelvin)))
+    @test !isinf(to_rankine(Temperature(0.0, kelvin)))
+
+    # Cross-validate: to_kelvin to_rankine == degF to_rankine for same physical temperature
+    t_k  = Temperature(273.15, kelvin)
+    t_f  = to_degF(t_k)
+    @test to_rankine(t_f) ≈ to_rankine(t_k) atol=1e-9
+
+    # Edge: very large Kelvin → large Rankine (no overflow in Float64 range we care about)
+    @test isfinite(to_rankine(Temperature(10000.0, kelvin)))
+
+    # Verify conversion identity paths do not silently produce NaN (sanity check on each source unit)
+    for u ∈ [kelvin, degC, degF]
+        t = Temperature(100.0, u)
+        @test !isnan(to_rankine(t))
+    end
+end
+
+# ================================================================================
