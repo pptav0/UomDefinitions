@@ -157,11 +157,11 @@ end
 
     # F15-F16: Boundary tests — -1e-15 throws, +1e-15 does not throw
     @test_throws NegativeValueError PumpRate(-1e-15, bpm)  # Negative (even tiny) → error
-    @test      PumpRate( 1e-15, bpm).value == 1e-15        # Tiny positive → valid
+    @test        PumpRate(1e-15, bpm).value == 1e-15       # Tiny positive → valid
 
     @test_throws NegativeValueError PumpRate(-1e-15, lpm)
-    @test      PumpRate( 1e-15, lpm).value == 1e-15
+    @test        PumpRate(1e-15, lpm).value == 1e-15
 
     @test_throws NegativeValueError PumpRate(-1e-15, gpm)
-    @test      PumpRate( 1e-15, gpm).value == 1e-15
+    @test        PumpRate(1e-15, gpm).value == 1e-15
 end
