@@ -71,7 +71,7 @@ const L_PER_BBL     = 159               # liters per US barrel
 const M3_PER_BBL    = L_PER_BBL / L_PER_M3
 const GAL_PER_BBL   = 42.0              # gallons per US barrel
 const FT3_PER_BBL   = L_PER_BBL / (M3_PER_FT3 * L_PER_M3)   # ≈ 5.6146 ft³ per bbl
-const GAL_PER_FT3   = L_PER_BBL / GAL_PER_BBL
+const GAL_PER_FT3   = 7.4805194805      # US liquid gallon per ft³
 
 # --- Conversion helpers ------------------------------------------------------
 
