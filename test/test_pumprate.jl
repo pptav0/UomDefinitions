@@ -55,7 +55,7 @@ end
 
     h2 = PumpRate(10.0, lpm)
     @test to_lpm(h2).value == 10.0
-    @test to_bpm(h2).value ≈ 1.0 / 15.9 atol=1e-6   # 1/159
+    @test to_bpm(h2).value ≈ 1.0 / 15.9 atol=1e-6      # 1/159
 
     h3 = PumpRate(5.0, gpm)
     @test to_gpm(h3).value == 5.0
@@ -68,4 +68,67 @@ end
         @test to_lpm(PumpRate(v, lpm)).value ≈ v atol=min(1e-9*v, 1.0)
         @test to_gpm(PumpRate(v, gpm)).value ≈ v atol=min(1e-9*v, 1.0)
     end
+end
+# ===== T-6.3: Edge Cases (~20 assertions) =====
+@testset "PumpRate — Edge Cases" begin
+    # E1-E3: Near-zero rates construct without error (below standard bounds)
+    @test PumpRate(1e-10, bpm).value ≈ 1e-10 atol=1e-14
+    @test PumpRate(1e-6,  lpm).value ≈ 1e-6 atol=1e-10
+    @test PumpRate(1e-9,  gpm).value ≈ 1e-9 atol=1e-13
+
+    # E4-E6: Large rates construct within Float64 range
+    @test PumpRate(10_000.0,  bpm).value == 10_000.0
+    @test PumpRate(100_000.0, bpm).value == 100_000.0
+    @test PumpRate(500_000.0, lpm).value == 500_000.0
+
+    # E7-E9: Round-trip near-zero preserves order-of-magnitude (self-identity)
+    r_a = PumpRate(1e-8, bpm)
+    @test to_bpm(r_a).value ≈ 1e-8 atol=eps()*1e8+1e-12      # BPM→BPM identity
+    r_b = PumpRate(1e-5, lpm)
+    @test to_lpm(r_b).value ≈ 1e-5 atol=eps()*1e5+1e-9       # LPM→LPM identity
+    r_c = PumpRate(5e-7, gpm)
+    @test to_gpm(r_c).value ≈ 5e-7 atol=eps()*5e6+1e-11      # GPM→GPM identity
+
+    # E10-E12: Round-trip large values preserves order-of-magnitude (self-identity)
+    r_lb = PumpRate(5_000.0, bpm)
+    @test to_bpm(r_lb).value ≈ 5_000 atol=eps()*5e3+1e-6     # BPM→BPM
+    r_ll = PumpRate(80_000.0, lpm)
+    @test to_lpm(r_ll).value ≈ 80_000 atol=eps()*8e4+1e-6    # LPM→LPM
+    r_gb = PumpRate(25_000.0, gpm)
+    @test to_gpm(r_gb).value ≈ 25_000 atol=eps()*2.5e4+1e-6  # GPM→GPM
+
+    # E13: BPM→LPM→GPM→BPM four-hop cycle (accumulated FP error ~6e-4)
+    r_bpm = PumpRate(7.5, bpm)
+    @test to_bpm(to_gpm(to_lpm(r_bpm))).value ≈ r_bpm.value atol=1e-3
+
+    # E14: LPM→GPM→BPM→LPM four-hop (base 80 LPM not aligned to constants)
+    r_lpm = PumpRate(80.0, lpm)
+    @test to_lpm(to_bpm(to_gpm(r_lpm))).value ≈ r_lpm.value atol=1e-2
+
+    # E15: GPM→BPM→LPM→GPM four-hop cycle (accumulated FP error acceptable)
+    r_gpm = PumpRate(3.25, gpm)
+    @test to_gpm(to_lpm(to_bpm(r_gpm))).value ≈ r_gpm.value atol=1e-3
+
+    # E16-E18: Two-hop single-pair round-trips (cross-unit pairs)
+    r_ab_lp = PumpRate(50.0, lpm)
+    @test to_lpm(to_gpm(r_ab_lp)).value ≈ r_ab_lp.value atol=1e-6   # LPM→GPM→LPM
+
+    r_bg_gp = PumpRate(20.0, gpm)
+    @test to_gpm(to_bpm(r_bg_gp)).value ≈ r_bg_gp.value atol=1e-6    # GPM→BPM→GPM
+
+    r_gb_lb = PumpRate(42.0, gpm)
+    @test to_bpm(to_lpm(r_gb_lb)).value ≈ 1.0 atol=1e-3     # GPM→LPM→BPM: 42 GPM ~ 1 BPM (FP error ~8e-5)
+
+    # E19-E21: Negative zero (-0.0) equals +0.0 per IEEE 754 compliance
+    nzero_bpm = PumpRate(-0.0, bpm)
+    pzero_bpm = PumpRate( 0.0, bpm)
+    @test nzero_bpm.value == pzero_bpm.value      # IEEE: -0.0 == +0.0
+
+    np_lpm = PumpRate(-0.0, lpm)
+    pz_lpm = PumpRate( 0.0, lpm)
+    @test np_lpm.value == pz_lpm.value           # IEEE: -0.0 == +0.0
+
+    np_gpm = PumpRate(-0.0, gpm)
+    pz_gpm = PumpRate( 0.0, gpm)
+    @test np_gpm.value == pz_gpm.value           # IEEE: -0.0 == +0.0
 end
