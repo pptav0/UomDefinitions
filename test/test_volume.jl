@@ -19,7 +19,7 @@ using UomDefinitions
 	@test to_bbl(Volume(1.0, m3)).value ≈ 6.2893 atol=1e-3
 
 	# Liter conversions (1 bbl = 158.987 L exact)
-	@test to_ltr(Volume(1.0, bbl)).value ≈ 159 atol=1e-3
+	@test to_ltr(Volume(1.0, bbl)).value ≈ 158.987295 atol=1e-6
 	@test to_m3(Volume(1000.0, ltr)).value == 1.0
 
 	# Cross-conversions across all three units
@@ -59,7 +59,7 @@ end
 
 	# Standard primary cement job volume
 	standard_cement = Volume(150.0, bbl)
-	@test to_ltr(standard_cement).value ≈ 23850.0 atol=1.0
+	@test to_ltr(standard_cement).value ≈ 23848.02 atol=0.1
 
 	# Large spacer volumes (pre flush + backflush combination)
 	spacer_total = Volume(4500.0, ltr)   # ~28.3 bbl
@@ -201,7 +201,7 @@ end
 	eps_m3 = Volume(1e-9, m3)
 	bbl_val = to_bbl(eps_m3).value
 	@test bbl_val > 0.0
-	@test bbl_val ≈ 6.289308e-9 atol=1e-15
+	@test bbl_val ≈ 6.28981077e-9 atol=1e-15
 
 	# Near-zero in other units
 	eps_ltr = Volume(1e-12, ltr)

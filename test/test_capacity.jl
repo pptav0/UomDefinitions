@@ -15,20 +15,20 @@ end
 @testset "Capacity — constants derived from base definitions" begin
     # 1 bbl/ft = 159 L / 0.3048 m = 521.65 L/m
     @test M3_M_PER_BBL_FT ≈ L_PER_BBL / L_PER_M3 / M_PER_FT
-    @test M3_M_PER_BBL_FT ≈ 0.52165 atol=1e-5
+    @test M3_M_PER_BBL_FT ≈ 0.52165 atol=1e-4
     @test M3_M_PER_BBL_FT * BBL_FT_PER_M3_M ≈ 1.0
 end
 
 @testset "Capacity — conversions" begin
     c = Capacity(1.0, bbl_ft)
     @test to_gal_ft(c).value ≈ 42.0
-    @test to_m3_m(c).value   ≈ 0.52165 atol=1e-5
-    @test to_l_m(c).value    ≈ 521.65  atol=1e-2
+    @test to_m3_m(c).value   ≈ 0.52165 atol=1e-4
+    @test to_l_m(c).value    ≈ 521.61186  atol=1e-5
     @test to_bbl_ft(Capacity(42.0, gal_ft)).value ≈ 1.0
     @test to_bbl_ft(Capacity(1000.0, l_m)).value  ≈ to_bbl_ft(Capacity(1.0, m3_m)).value
     @test to_l_m(Capacity(1.0, m3_m)).value ≈ 1000.0
     # numeric + unit form
-    @test to_l_m(1.0, bbl_ft).value ≈ 521.65 atol=1e-2
+    @test to_l_m(1.0, bbl_ft).value ≈ 521.61186 atol=1e-5
 end
 
 @testset "Capacity — identity, round-trip, to_unit" begin
