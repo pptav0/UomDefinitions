@@ -130,5 +130,38 @@ end
 
     np_gpm = PumpRate(-0.0, gpm)
     pz_gpm = PumpRate( 0.0, gpm)
-    @test np_gpm.value == pz_gpm.value           # IEEE: -0.0 == +0.0
+    @test np_gpm.value == pz_gpm.value            # IEEE: -0.0 == +0.0
+end
+
+# ===== T-6.4: Failure Cases (~18 assertions) =====
+@testset "PumpRate — Failure Cases" begin
+    # F1-F3: NaN → InvalidValueError (all units)
+    @test_throws InvalidValueError PumpRate(NaN, bpm)
+    @test_throws InvalidValueError PumpRate(NaN, lpm)
+    @test_throws InvalidValueError PumpRate(NaN, gpm)
+
+    # F4-F9: Inf/-Inf → InvalidValueError (all units, both signs)
+    @test_throws InvalidValueError PumpRate( Inf, bpm)
+    @test_throws InvalidValueError PumpRate(-Inf, bpm)
+    @test_throws InvalidValueError PumpRate( Inf, lpm)
+    @test_throws InvalidValueError PumpRate(-Inf, lpm)
+    @test_throws InvalidValueError PumpRate( Inf, gpm)
+    @test_throws InvalidValueError PumpRate(-Inf, gpm)
+
+    # F10-F14: Negative values → NegativeValueError (all units, multiple test points)
+    for neg_val in [-0.5, -1.0, -100.0]
+      @test_throws NegativeValueError PumpRate(neg_val, bpm)
+      @test_throws NegativeValueError PumpRate(neg_val, lpm)
+      @test_throws NegativeValueError PumpRate(neg_val, gpm)
+    end
+
+    # F15-F16: Boundary tests — -1e-15 throws, +1e-15 does not throw
+    @test_throws NegativeValueError PumpRate(-1e-15, bpm)  # Negative (even tiny) → error
+    @test      PumpRate( 1e-15, bpm).value == 1e-15        # Tiny positive → valid
+
+    @test_throws NegativeValueError PumpRate(-1e-15, lpm)
+    @test      PumpRate( 1e-15, lpm).value == 1e-15
+
+    @test_throws NegativeValueError PumpRate(-1e-15, gpm)
+    @test      PumpRate( 1e-15, gpm).value == 1e-15
 end
