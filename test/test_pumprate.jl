@@ -122,7 +122,7 @@ end
     # E19-E21: Negative zero (-0.0) equals +0.0 per IEEE 754 compliance
     nzero_bpm = PumpRate(-0.0, bpm)
     pzero_bpm = PumpRate( 0.0, bpm)
-    @test nzero_bpm.value == pzero_bpm.value      # IEEE: -0.0 == +0.0
+    @test nzero_bpm.value == pzero_bpm.value     # IEEE: -0.0 == +0.0
 
     np_lpm = PumpRate(-0.0, lpm)
     pz_lpm = PumpRate( 0.0, lpm)
