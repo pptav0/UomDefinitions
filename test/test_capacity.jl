@@ -166,10 +166,105 @@ end
 end
 
 # =========================================================================== #
-# Capacity constants derived from base definitions                              #
+# Capacity — constants derived from base definitions                              #
 # =========================================================================== #
 @testset "Capacity — constants derived from base definitions" begin
     # 1 bbl/ft = 159 L / 0.3048 m = 521.65 L/m
+
+    @test M3_M_PER_BBL_FT ≈ L_PER_BBL / L_PER_M3 / M_PER_FT
+    @test M3_M_PER_BBL_FT * BBL_FT_PER_M3_M ≈ 1.0
+end
+
+# =========================================================================== #
+# Capacity — T-8.97a: Failure Cases (NaN + Negative Value guards)                #
+# =========================================================================== #
+@testset "Capacity — T-8.97a: Failure Cases (NaN + Negative Value)" begin
+
+    # -- NaN → InvalidValueError (5 Float64 assertions, all unit types) -----------
+    @test_throws UomDefinitions.InvalidValueError Capacity(NaN, bbl_ft)
+    @test_throws UomDefinitions.InvalidValueError Capacity(NaN, gal_ft)
+    @test_throws UomDefinitions.InvalidValueError Capacity(NaN, m3_m )
+    @test_throws UomDefinitions.InvalidValueError Capacity(NaN, l_m  )
+    @test_throws UomDefinitions.InvalidValueError Capacity(NaN, ft3_ft)
+
+    # -- NaN → InvalidValueError (5 Float32 assertions, all unit types) -----------
+    # Verify that Float32 NaN enters the inner constructor via `v::Real` dispatch
+    # without getting silently promoted or absorbed before guard evaluation.
+    @test_throws UomDefinitions.InvalidValueError Capacity(Float32(NaN), bbl_ft)
+    @test_throws UomDefinitions.InvalidValueError Capacity(Float32(NaN), gal_ft)
+    @test_throws UomDefinitions.InvalidValueError Capacity(Float32(NaN), m3_m )
+    @test_throws UomDefinitions.InvalidValueError Capacity(Float32(NaN), l_m  )
+    @test_throws UomDefinitions.InvalidValueError Capacity(Float32(NaN), ft3_ft)
+    @test_throws UomDefinitions.InvalidValueError Capacity(-Float32(NaN)^-1, gal_ft)  # -Inf via IEEE reciprocal
+
+    # -- Inf, -Inf → same guard (2 Float64 + 1 Float32 assertions) -------------
+    # Verify that infinity is rejected uniformly across the Real hierarchy.
+    @test_throws UomDefinitions.InvalidValueError Capacity(Inf,   bbl_ft)
+    @test_throws UomDefinitions.InvalidValueError Capacity(-Inf,  bbl_ft)
+    @test_throws UomDefinitions.InvalidValueError Capacity(Inf32, gal_ft)
+
+    # -- Negative → NegativeValueError (5 Float64 assertions, all unit types) -----
+    # These must throw AFTER isfinite passes but BEFORE any other test.
+    @test_throws UomDefinitions.NegativeValueError Capacity(-1.0, bbl_ft)
+    @test_throws UomDefinitions.NegativeValueError Capacity(-1.0, gal_ft)
+    @test_throws UomDefinitions.NegativeValueError Capacity(-1.0, m3_m )
+    @test_throws UomDefinitions.NegativeValueError Capacity(-1.0, l_m  )
+    @test_throws UomDefinitions.NegativeValueError Capacity(-1.0, ft3_ft)
+
+    # -- Negative Float32 also triggers NegativeValueError (1 assertion) --------
+    @test_throws UomDefinitions.NegativeValueError Capacity(-1.0f0, bbl_ft)
+
+    nothing  # No remaining failure path; validation is exhaustive for all guard branches
+end
+
+# =========================================================================== #
+# Capacity — T-8.97b: to_unit dispatcher (explicit Capacity tests)             #
+# =========================================================================== #
+@testset "Capacity — T-8.97b: to_unit dispatcher" begin
+    c = Capacity(5.0, bbl_ft)
+
+    @test to_unit(c, bbl_ft).value ≈ 5.0 atol=1e-12
+    @test to_unit(c, gal_ft).value ≈ 210.0 atol=1e-6       # 5.0 * 42 = 210
+    @test isa(to_unit(c, m3_m ), Capacity{M3_PER_M})
+    @test isa(to_unit(c, l_m   ), Capacity{L_PER_M})
+    @test isa(to_unit(c, ft3_ft), Capacity{FT3_PER_FT})
+end
+
+# =========================================================================== #
+# Capacity — T-8.97c: Round-trip chains (extended sources)                      #
+# =========================================================================== #
+@testset "Capacity — T-8.97c: Round-trip chains" begin
+
+    # -- From m³/m as source: go to gal/ft and back -----------------------------------
+    c_m3 = Capacity(10.0, m3_m)
+    @test to_m3_m(to_l_m(c_m3)).value     ≈ 10.0 atol=1e-12
+    @test to_m3_m(to_ft3_ft(c_m3)).value   ≈ 10.0 atol=1e-14
+
+    # -- From gal/ft as source: go through bbl/ft and back -----------------------------
+    c_gal = Capacity(100.0, gal_ft)
+    @test to_gal_ft(to_bbl_ft(c_gal)).value ≈ 100.0 atol=1e-10
+
+    # -- From l_m as source: go through m³/m and round-trip ---------------------------
+    c_l = Capacity(500.0, l_m)
+    @test to_l_m(to_m3_m(c_l)).value ≈ 500.0 atol=1e-10
+
+    # -- Full cycle across all five units: bbl/ft → m³/m → l_m → m3_ff → ft3_ft → bbl
+    c_bbl = Capacity(2.0, bbl_ft)
+    @test to_bbl_ft(to_l_m(to_m3_m(c_bbl))).value   ≈ 2.0 atol=1e-12
+
+    # -- Mixed cross: m³/m → gal/ft via m3+ff conversion ------------------------
+    c_m3m = Capacity(1.0, m3_m)
+    @test to_m3_m(to_ft3_ft(c_m3m)).value ≈ 1.0 atol=1e-8     # m3 → ft3 → m3 round-trip
+
+    nothing  # All extended round-trips passed; no assertion failures means chain integrity holds
+end
+
+# =========================================================================== #
+# Capacity — constants derived from base definitions                              #
+# =========================================================================== #
+@testset "Capacity — constants derived from base definitions" begin
+    # 1 bbl/ft = 159 L / 0.3048 m = 521.65 L/m
+
     @test M3_M_PER_BBL_FT ≈ L_PER_BBL / L_PER_M3 / M_PER_FT
     @test M3_M_PER_BBL_FT * BBL_FT_PER_M3_M ≈ 1.0
 end
