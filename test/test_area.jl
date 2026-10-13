@@ -61,3 +61,34 @@ end
     # Near-zero round-trips preserve order of magnitude (tolerance check)
     @test to_in2(Area(1.0, m2)).value ≈ 1550.0 atol=10   # ~1 m² → ~1550 in²
 end
+
+# ========= Failure Cases (~19 assertions) ======================================
+# Error handling: NaN/Inf rejection → InvalidValueError; negative → NegativeValueError
+
+@testset "Area — Failure Cases" begin
+    # NaN rejected in all units
+    @test_throws InvalidValueError Area(NaN, in2)
+    @test_throws InvalidValueError Area(NaN, ft2)
+    @test_throws InvalidValueError Area(NaN, m2)
+
+    # +Inf and -Inf rejected in all units (3 units × 2 values = 6 assertions)
+    @test_throws InvalidValueError Area(Inf, in2)
+    @test_throws InvalidValueError Area(-Inf, in2)
+    @test_throws InvalidValueError Area(Inf, ft2)
+    @test_throws InvalidValueError Area(-Inf, ft2)
+    @test_throws InvalidValueError Area(Inf, m2)
+    @test_throws InvalidValueError Area(-Inf, m2)
+
+    # Negative values throw NegativeValueError across typical range
+    @test_throws NegativeValueError Area(-1.0, in2)
+    @test_throws NegativeValueError Area(-100.0, ft2)
+    @test_throws NegativeValueError Area(-6.4516, m2)
+
+    # Very small negative value still throws (boundary test)
+    @test_throws NegativeValueError Area(-1e-300, in2)  # denormal near zero
+
+    # Zero still constructs (not rejected by NonNegativeError — that's only for PumpRate-like)
+    @test Area(0.0, in2).value == 0.0
+    @test (-0.0) == 0.0   # IEEE signed zero: -0.0 == 0.0 is true
+end
+
