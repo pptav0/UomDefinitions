@@ -47,7 +47,34 @@ only values below 0 Kelvin (physically impossible) trigger this error.
 struct BelowAbsoluteZeroError <: Exception end
 
 Base.showerror(io::IO, ::BelowAbsoluteZeroError) =
-    print(io, "BelowAbsoluteZeroError: temperature cannot be below absolute zero (0 K / -273.15°C)")
+    print(
+        io,
+        "BelowAbsoluteZeroError: temperature cannot be below absolute zero (0 K / -273.15°C)",
+    )
+
+
+# ------------------------------------------------------------------
+# ZeroCapacityError — Capacity-specific exception
+# ------------------------------------------------------------------
+
+"""
+    ZeroCapacityError()
+
+Thrown when capacity per length is explicitly zero, which has no physical meaning.
+Unlike zero length (TVD surface) or zero pump rate (idle state), zero capacity implies:
+- A solid rod (OD = ID), not an annulus
+- No hole exists (hole_capacity = 0)
+- Mathematical singularity in volume-to-depth conversions
+
+This error is non-recoverable in hydraulic calculations.
+"""
+struct ZeroCapacityError <: Exception end
+
+Base.showerror(io::IO, ::ZeroCapacityError) = print(
+    io,
+    "ZeroCapacityError: capacity per length cannot be zero (physical impossibility: OD=ID implies solid rod, not annulus)",
+)
+
 
 # ------------------------------------------------------------------
 # Validation helpers
