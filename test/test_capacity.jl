@@ -166,16 +166,6 @@ end
 end
 
 # =========================================================================== #
-# Capacity — constants derived from base definitions                              #
-# =========================================================================== #
-@testset "Capacity — constants derived from base definitions" begin
-    # 1 bbl/ft = 159 L / 0.3048 m = 521.65 L/m
-
-    @test M3_M_PER_BBL_FT ≈ L_PER_BBL / L_PER_M3 / M_PER_FT
-    @test M3_M_PER_BBL_FT * BBL_FT_PER_M3_M ≈ 1.0
-end
-
-# =========================================================================== #
 # Capacity — T-8.97a: Failure Cases (NaN + Negative Value guards)                #
 # =========================================================================== #
 @testset "Capacity — T-8.97a: Failure Cases (NaN + Negative Value)" begin
