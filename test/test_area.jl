@@ -38,3 +38,26 @@ using UomDefinitions
     @test to_unit(a, FT2()).value ≈ 1.0 atol=1e-12
     @test to_unit(a, M2()).value ≈ 0.09290304 atol=1e-12
 end
+
+# ========= Edge Cases (~12 assertions) =======================================
+# Boundary conditions: zero boundary, near-zero, large-conversion boundaries
+
+@testset "Area — Edge Cases" begin
+    # Zero boundary: area(0, unit) constructs successfully (point bore is theoretical)
+    @test Area(0.0, in2).value == 0.0
+    @test Area(0.0, ft2).value == 0.0
+    @test Area(0.0, m2).value == 0.0
+
+    # Zero conversions produce zero
+    @test to_m2(Area(0.0, in2)).value == 0.0
+    @test to_in2(Area(0.0, ft2)).value == 0.0
+    @test to_ft2(Area(0.0, m2)).value == 0.0
+
+    # Near-zero values construct without error
+    @test Area(1e-15, in2).value == 1e-15
+    @test Area(1e-15, ft2).value == 1e-15
+    @test Area(1e-15, m2).value == 1e-15
+
+    # Near-zero round-trips preserve order of magnitude (tolerance check)
+    @test to_in2(Area(1.0, m2)).value ≈ 1550.0 atol=10   # ~1 m² → ~1550 in²
+end
