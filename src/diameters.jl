@@ -16,18 +16,16 @@ Represents a diameter with its unit (`IN` or `MM`).
 """
 mutable struct Diameter{U<:DiameterUnit}
     value::Float64
+
+    function Diameter{U}(v::Real) where {U<:DiameterUnit}
+        isfinite(v) || throw(InvalidValueError())
+        v < 0 && throw(NegativeValueError())
+        new{U}(float(v))
+    end
 end
 
-# Constructors with validation
-function Diameter(v::Real, ::IN)
-    validate_value(v)
-    Diameter{IN}(float(v))
-end
-
-function Diameter(v::Real, ::MM)
-    validate_value(v)
-    Diameter{MM}(float(v))
-end
+# ergonomic constructors (outer — delegate to inner above)
+Diameter(v::Real, ::U) where {U<:DiameterUnit} = Diameter{U}(Float64(v))
 
 # --- constants ---
 const MM_PER_IN = 25.4

@@ -27,8 +27,7 @@ mutable struct Length{U<:LengthUnit}
 end
 
 # Ergonomic helpers delegate to the guarded inner constructor above.
-Length(v::Real, ::FT) = Length{FT}(Float64(v))
-Length(v::Real, ::M)  = Length{M}(Float64(v))
+Length(v::Real, ::U) where {U<:LengthUnit} = Length{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
 const M_PER_FT = 0.3048

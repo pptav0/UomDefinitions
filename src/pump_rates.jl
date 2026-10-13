@@ -32,9 +32,7 @@ mutable struct PumpRate{U<:PumpRateUnit}
 end
 
 # Ergonomic helpers delegate to inner constructor — no separate validation
-PumpRate(v::Real, ::BPM) = PumpRate{BPM}(Float64(v))
-PumpRate(v::Real, ::LPM) = PumpRate{LPM}(Float64(v))
-PumpRate(v::Real, ::GPM) = PumpRate{GPM}(Float64(v))
+PumpRate(v::Real, ::U) where {U<:PumpRateUnit} = PumpRate{U}(Float64(v))
 
 # ---------- Conversions ----------
 """
