@@ -281,12 +281,20 @@ end
     # gal/ft →→ bbl/ft (skip: not through l_m as central bridge)
     g = Capacity(100.0, gal_ft)
     gb = to_bbl_ft(g)
-    @test abs(gb.value - 100.0 / 42.0) < 1e-6           # 100 gal/ft ≈ 2.38 bbl
+    @test abs(gb.value - 100.0 / 42.0) < 1e-6      # 100 gal/ft ≈ 2.38 bbl
 
     # ft3/ft → l_m (skip: not through m³/m bridge first, via direct conversion)
     f = Capacity(0.5, ft3_ft)
     fl = to_l_m(f)
-    @test abs(fl.value - 46.45152) < 1e-16             # ~0.5 ft3/ft ≈ 47 l_m (within range)
+    @test abs(fl.value - 46.45152) < 1e-16         # ~0.5 ft3/ft ≈ 47 l_m (within range)
+
+    # Round-trip: gal/ft → bbl/ft → gal/ft (should return ≈ 100.0, per T-8.5 plan spec)
+    g_back = to_gal_ft(to_bbl_ft(g)).value
+    @test g_back ≈ 100.0 atol=1e-8
+
+    # Round-trip: ft3/ft → l_m → ft3/ft (should return ≈ 0.5, per T-8.5 plan spec)
+    f_back = to_ft3_ft(to_l_m(f)).value
+    @test f_back ≈ 0.5 atol=1e-6
 
     # Verify that gal→bbl and ft3→l_m do not produce NaN, Inf or zero
     @test isfinite(gb.value) && gb.value > 0
@@ -309,7 +317,7 @@ end
     @test j4.value > 0.05 && j4.value < 0.85        # sanity: order-of-magnitude ok
 
     # Reverse chain end-to-end: l_m must flow through all five without dropping magnitude
-    @test j4.value > 0.0 && isfinite(j4.value)       # nonzero, finite after full cycle
+    @test j4.value > 0.0 && isfinite(j4.value)      # nonzero, finite after full cycle
 
 end
 
@@ -317,7 +325,7 @@ end
     # bbl/ft → gal/ft → m³/m → l_m → ft3/ft (reverse skip order)
     c = Capacity(25.0, bbl_ft)
     k1 = to_gal_ft(c)
-    @test isfinite(k1.value) && k1.value > 1049         # 25 bbl ≈ ~1050 gal/ft
+    @test isfinite(k1.value) && k1.value > 1049     # 25 bbl ≈ ~1050 gal/ft
 
     k2_m3 = to_m3_m(k1)
     @test abs(k2_m3.value - round(25.0 * M3_M_PER_BBL_FT, digits=12)) < 1e-14
