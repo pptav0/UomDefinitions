@@ -49,7 +49,7 @@ const M3_M_PER_BBL_FT = FT3_PER_BBL * M3_PER_FT3 / M_PER_FT
 "1 m³/m expressed in bbl/ft"
 const BBL_FT_PER_M3_M = 1 / M3_M_PER_BBL_FT
 "1 ft³/ft expressed in m³/m — derived: M3_PER_FT3 / M_PER_FT = M_PER_FT² ≈ 0.0929"
-const M3_M_PER_FT3_FT = M3_PER_FT3 / M_PER_FT
+const M3_M_PER_FT3_FT = M_PER_FT^2
 "1 m³/m expressed in ft³/ft"
 const FT3_FT_PER_M3_M = 1 / M3_M_PER_FT3_FT
 
