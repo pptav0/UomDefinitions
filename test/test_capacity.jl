@@ -24,7 +24,7 @@ using UomDefinitions
     @test string(Capacity(1.93,   gal_ft)) == "1.93 gal/ft"
     @test string(Capacity(0.0239,  m3_m))  == "0.0239 m³/m"
     @test string(Capacity(23.9,      l_m)) == "23.9 L/m"
-    # ft³/ft already verified below under "ft³/ft specific" section
+    # ft³/ft string verified below under "Edge Cases > ft³/ft specific"
 
     # -- Identity: to_*() returning self when source matches target unit ------
     c = Capacity(1.0, bbl_ft)
@@ -41,17 +41,17 @@ using UomDefinitions
 
     # -- Cross-unit conversions (all 5 directions from each unit) -------------
     c_bbl = Capacity(1.0, bbl_ft)
-    @test to_gal_ft(c_bbl).value ≈ 42.0
+    @test to_gal_ft(c_bbl).value ≈ 42.0 atol=1e-8
     @test to_m3_m(c_bbl).value   ≈ M3_M_PER_BBL_FT atol=1e-12
     @test to_l_m(c_bbl).value    ≈ L_PER_BBL * FT_PER_M  atol=1e-12
     @test to_ft3_ft(c_bbl).value ≈ FT3_PER_BBL           atol=1e-12
 
-    c_m3  = Capacity(1.0, m3_m)
-    @test to_bbl_ft(c_m3).value    ≈ BBL_FT_PER_M3_M     atol=1e-12
+    c_m3 = Capacity(1.0, m3_m)
+    @test to_bbl_ft(c_m3).value    ≈ BBL_FT_PER_M3_M atol=1e-12
     @test to_l_m(c_m3).value     ≈ 1000.0
 
     c_gal = Capacity(42.0, gal_ft)
-    @test to_bbl_ft(c_gal).value ≈ 1.0                   atol=1e-12
+    @test to_bbl_ft(c_gal).value ≈ 1.0 atol=1e-12
 
     # -- Round-trip: convert away and back (all units) ------------------------
     # bbl/ft round-trips
@@ -60,7 +60,7 @@ using UomDefinitions
 
     # m³/m round-trips
     @test to_m3_m(to_bbl_ft(Capacity(5.0,   m3_m))).value ≈ 5.0 atol=1e-12
-    @test to_m3_m(to_l_m(Capacity(5.0,    m3_m))).value   ≈ 5.0 atol=1e-12
+    @test to_m3_m(to_l_m(Capacity(5.0,   m3_m))).value   ≈ 5.0 atol=1e-12
 
     # gal/ft round-trip
     @test to_gal_ft(to_bbl_ft(Capacity(168.0, gal_ft))).value ≈ 168.0 atol=1e-12
@@ -72,6 +72,74 @@ using UomDefinitions
     @test to_bbl_ft(1.0, bbl_ft).value   == 1.0
     @test to_m3_m(  1.0, m3_m).value    == 1.0
     @test to_l_m(  1000.0, l_m ).value   == 1000.0
+end
+
+# =========================================================================== #
+# Capacity — Edge Cases                                                       #
+# =========================================================================== #
+@testset "Capacity — Edge Cases" begin
+
+    # -- Zero capacity REJECTED (10 assertions) ---------------------------------
+    # Critical vs Length: zero is INVALID for Capacity (solid rod, OD=ID).
+    # Test both +0.0 and -0.0: signed-zero must hit ZeroCapacityError, not NegativeValueError.
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(0.0f0, bbl_ft)
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(-0.0,  bbl_ft)
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(0.0f0, gal_ft)
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(-0.0,  gal_ft)
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(0.0f0, m3_m )
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(-0.0,  m3_m )
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(0.0f0, l_m  )
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(-0.0,  l_m  )
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(0.0f0, ft3_ft)
+    @test_throws UomDefinitions.ZeroCapacityError Capacity(-0.0,  ft3_ft)
+
+    # -- Near-zero shallow annulus (5 assertions) ---------------------------------
+    # A near-zero capacity simulates a very tight annulus OD ≈ ID — physically valid but
+    # dangerous since division by tiny capacity (depth = vol / cap) risks floating-point overflow.
+    c_nz_bbl = Capacity(1.0e-7, bbl_ft)
+    @test c_nz_bbl.value == 1.0e-7
+
+    c_nz_m3 = to_m3_m(c_nz_bbl)
+    @test c_nz_m3.value ≈ M3_M_PER_BBL_FT * 1.0e-7 atol=1e-20
+
+    c_nz_ft3 = Capacity(3.0e-8, ft3_ft)
+    @test c_nz_ft3.value == 3.0e-8
+
+    # -- Large values for wide annulus (4 assertions) --------------------------
+    # Open-hole extremes: no overflow in construction or conversion.
+    c_large = Capacity(5.0, bbl_ft)
+    @test c_large.value == 5.0
+    @test to_m3_m(c_large).value ≈ M3_M_PER_BBL_FT * 5.0 atol=1e-20
+
+    c_m3 = Capacity(2.0, m3_m)
+    @test c_m3.value == 2.0
+    @test to_l_m(c_m3).value == 2000.0
+
+    # -- Round-trip at near-zero boundary (7 assertions) ------------------------
+    # Verify that sub-standard magnitudes through conversion chains do not underflow to zero.
+    c_bbl = Capacity(1.0e-7, bbl_ft)
+    @test c_bbl.value ≈ 1.0e-7 atol=1e-20       # Direct construction
+
+    c_back_m3 = to_m3_m(c_bbl)
+    @test c_back_m3.value ≈ M3_M_PER_BBL_FT * 1.0e-7 atol=1e-20  # Through m³/m
+
+    c_back_l = to_l_m(to_m3_m(c_bbl))         # l_m path from bbl/ft
+    @test   c_back_l.value ≈ L_PER_M3 * M3_M_PER_BBL_FT * 1.0e-7 atol=1e-18
+
+    c_back_bbl = to_bbl_ft(to_m3_m(c_bbl))    # Round-trip through m³/m back to bbl/ft
+    @test   c_back_bbl.value ≈ 1.0e-7 atol=1e-20
+
+    # FT3/FT round-trips near the zero boundary
+    c_ft3 = Capacity(1.0e-8, ft3_ft)
+    c_back_ft3 = to_ft3_ft(to_m3_m(c_ft3))           # ft³/ft → m³/m → ft³/ft
+    @test   c_back_ft3.value ≈ 1.0e-8 atol=1e-20
+
+    # Near-extreme round-trip: very large values also survive multi-stage chain
+    c_huge = Capacity(50.0,  ft3_ft)                    # Large FT³/ft (cavern-scale)
+    c_back_huge = to_ft3_ft(to_m3_m(c_huge))            # ft3/ft → m3/m → ft3/ft
+    @test     c_back_huge.value ≈ 50.0 atol=1e-8
+
+    nothing # Edge Cases complete: no errors means boundary conditions held
 end
 
 # =========================================================================== #
