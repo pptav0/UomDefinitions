@@ -335,11 +335,14 @@ end
     # Repeated full-cycle round-trip from a small base should not accumulate drift
     c = Capacity(3.0, bbl_ft)
 
-    for _ in 1:20
+    # 100 iterations at scale 3, diff should be ~ 0.1 ULP
+    for _ in 1:100
         c = to_bbl_ft(to_gal_ft(to_l_m(to_m3_m(c))))
+        c.value += 1e-3
     end
-    # 20 iterations at scale 3, diff should be ~0-1 ULP
+
     @test isfinite(c.value) && c.value > 0
+    @test c.value ≈ 3.1 atol=1e-12
 end
 
 # =========================================================================== #
