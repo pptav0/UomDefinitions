@@ -92,3 +92,38 @@ end
     @test (-0.0) == 0.0   # IEEE signed zero: -0.0 == 0.0 is true
 end
 
+# ========= Integration (~10 assertions) ========================================
+# Multi-stage conversion chains through all permutations (in²↔m²↔ft²)
+
+@testset "Area — Integration" begin
+    # Standard in² → m² → ft² → in² chain preserves value
+    a = Area(144.0, in2)                  # ≈ 1 ft²
+    a_m = to_m2(a)
+    a_ft = to_ft2(a_m)
+    a_back = to_in2(a_ft)
+    @test a_back.value ≈ a.value atol=1e-12
+
+    # Different canonical chain: ft² → m² → in² → m² round-trip
+    b = Area(10.0, ft2)
+    b_m = to_m2(b)
+    b_in = to_in2(b_m)
+    b_back = to_m2(thru_unit(b_in))   # back through in²
+    @test b_back.value ≈ b_m.value atol=1e-12
+
+    # Large value round-trip: 10,000 ft² → m² → in² → ft² preserves order
+    c = Area(1.0e4, ft2)
+    c_back = to_ft2(to_in2(to_m2(c)))
+    @test c_back.value ≈ c.value atol=1e-3 * 1.0e4   # 0.1% tolerance
+
+    # Near-zero round-trip preserves order of magnitude (tolerance is tighter as fraction,
+    # but raw value still very small)
+    d = Area(1.0e-6, in2)
+    @test to_in2(to_m2(to_ft2(d))).value ≈ 1.0e-6 atol=1e-12
+
+    # Large × many: 65,000 ft² (approx. 650ft bore area) round-trips within tolerance
+    e = Area(6.5e4, ft2)
+    @test to_ft2(to_m2(to_in2(e))).value ≈ e.value atol=10   # ±10 ft² on 65k is acceptable
+
+    # Verify m2 singleton helper works: Area(x, m2) and Area(x, M2()) are equivalent
+    @test to_m2(Area(5.0, m2)).value == to_m2(Area(5.0, M2())).value
+end
