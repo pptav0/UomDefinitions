@@ -28,7 +28,7 @@ using UomDefinitions
     @test to_m(m_var).value == m_var.value
 
     # --- Cross-conversion basic correctness ---
-    @test to_m(Length(1.0, ft)).value    ≈ 0.3048 atol=1e-9
+    @test to_m(Length(1.0, ft)).value   ≈ 0.3048 atol=1e-9
     @test to_ft(Length(1.0, m)).value   ≈ 3.280839895 atol=1e-6
 
     # --- Numeric + unit helper syntax (exact preservation) ---
@@ -64,9 +64,9 @@ end
 
     # --- Large values for deep wells ---
     l_deep = Length(30_000.0, ft)
-    @test l_deep.value == 30_000.0 atol=0.0
+    @test l_deep.value == 30_000.0
     l_deep_m = Length(9_144.0, m)
-    @test l_deep_m.value == 9_144.0 atol=0.0
+    @test l_deep_m.value == 9_144.0
 
     # Deep well round-trip precision
     @test to_m(l_deep).value ≈ to_m(Length(30_000.0, ft)).value atol=1e-6
