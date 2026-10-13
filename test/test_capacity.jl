@@ -316,9 +316,13 @@ end
     j4 = to_gal_ft(j3)
     @test j4.value > 0.05 && j4.value < 0.85        # sanity: order-of-magnitude ok
 
-    # Reverse chain end-to-end: l_m must flow through all five without dropping magnitude
-    @test j4.value > 0.0 && isfinite(j4.value)      # nonzero, finite after full cycle
+    # Round-trip mid-hop: l_m(10) → m³/m(0.01) back via bbl/ft should land ~0.01
+    c_mid = to_bbl_ft(j1)   # bbl/ft from m³/m intermediate
+    @test c_mid.value > 5e-7 && c_mid.value < 0.3       # sanity: not zero or huge
 
+    # Additional check: l_m(10) → m³/m(0.01) must converge (no underflow through chain)
+    j_check = to_ft3_ft(to_bbl_ft(to_m3_m(Capacity(10.0, l_m))))
+    @test j_check.value > 0.0 && j_check.value < 2.0     # sanity: positive, finite
 end
 
 @testset "Capacity — T-8.5D: Reversal Through All Five Units (Other Direction)" begin
@@ -336,7 +340,12 @@ end
     # Verify no magnitude collapse at any step
     @test isfinite(k1.value) && isfinite(k2_m3.value) && isfinite(k3.value)
 
-    k4_bbl = to_bbl_ft(k3); @test abs(k4_bbl.value - 25.0) < 1e-13     # Block D trace: diff=7.1e-15
+    k4_bbl = to_bbl_ft(k3);
+    @test abs(k4_bbl.value - 25.0) < 1e-13     # Block D trace: diff=7.1e-15 (original)
+
+    # Mid-hop tolerance check per T-8.5 plan spec: bbl/ft → gal/ft round-trip should preserve scale
+    k_back = to_bbl_ft(to_gal_ft(Capacity(25.0, bbl_ft)))
+    @test abs(k_back.value - 25.0) < 1e-6
 end
 
 @testset "Capacity — T-8.5E: Endurance Stress (≥100 Iterations)" begin   #
