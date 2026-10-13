@@ -17,15 +17,29 @@ const m2  = M2()
 """
     Area{U<:AreaUnit}(value)
 
-Typed area. Units: `IN2`, `FT2`, `M2`.
+Typed cross-sectional area. Units: `IN2`, `FT2`, `M2`.
+
+Cross-sectional area represents a physical 2D extent (pipe bore, steel wall thickness).
+Physical areas must be finite and non-negative — there is no such thing as negative area.
+Zero area is a theoretical boundary (point bore, closed tip) but never throws.
+
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
+- `NegativeValueError` if `value < 0` (area cannot be negative)
 """
 mutable struct Area{U<:AreaUnit}
     value::Float64
+
+    function Area{U}(value::Real) where {U<:AreaUnit}
+        isfinite(value)   || throw(InvalidValueError())
+        value < 0.0       && throw(NegativeValueError())
+
+        new{U}(value)
+    end
 end
 
-Area(v::Real, ::IN2) = Area{IN2}(float(v))
-Area(v::Real, ::FT2) = Area{FT2}(float(v))
-Area(v::Real, ::M2)  = Area{M2}(float(v))
+# ergonomic constructors (outer — delegate to inner above)
+Area(v::Real, ::U) where {U<:AreaUnit} = Area{U}(Float64(v))
 
 "square meters per square inch — derived: (MM_PER_IN / 1000)²"
 const M2_PER_IN2 = (MM_PER_IN / 1000)^2

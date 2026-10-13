@@ -34,7 +34,7 @@ mutable struct Capacity{U<:CapacityUnit}
 
     function Capacity{U}(v::Real) where {U<:CapacityUnit}
         isfinite(v) || throw(InvalidValueError())
-        v == 0.0 && throw(ZeroCapacityError())
+        iszero(v)   && throw(ZeroCapacityError())
         v < 0 && throw(NegativeValueError())
         new{U}(float(v))
     end
