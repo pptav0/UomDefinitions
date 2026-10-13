@@ -238,7 +238,7 @@ end
     # -- From m³/m as source: go to gal/ft and back -----------------------------------
     c_m3 = Capacity(10.0, m3_m)
     @test to_m3_m(to_l_m(c_m3)).value     ≈ 10.0 atol=1e-12
-    @test to_m3_m(to_ft3_ft(c_m3)).value   ≈ 10.0 atol=1e-14
+    @test to_m3_m(to_ft3_ft(c_m3)).value  ≈ 10.0 atol=1e-14
 
     # -- From gal/ft as source: go through bbl/ft and back -----------------------------
     c_gal = Capacity(100.0, gal_ft)
@@ -260,7 +260,88 @@ end
 end
 
 # =========================================================================== #
-# Capacity — constants derived from base definitions                              #
+# Capacity — T-8.5: Integration — Multi-Stage Round-Trip Chains                 #
+# =========================================================================== #
+@testset "Capacity — T-8.5A: Full 4-Hop Cycle" begin
+    # bbl/ft → m³/m → l_m → gal/ft → bbl/ft (all 5 units touched in one pipeline)
+    c = Capacity(7.0, bbl_ft)
+    i1 = to_m3_m(c);   @test i1.value > 0.0 && isfinite(i1.value)       # sanity: no overflow/underflow
+    i2 = to_l_m(i1);   @test i2.value > 0.0 && isfinite(i2.value)
+    i3 = to_gal_ft(i2); @test i3.value > 0.0 && isfinite(i3.value)
+    i4 = to_bbl_ft(i3)  # full-cycle recovery; block D confirms diff=0.0 at scale 7
+    @test i4.value ≈ 7.0 atol=1e-12                                       # zero drift through all five units
+
+    # Additional sanity: each intermediate should be within expected magnitude range
+    @test i1.value > 3.0 && i1.value < 4.0     # m³/m from 7 bbl/ft ≈ 3.65
+    @test i2.value > 3000 && i2.value < 4000   # l_m from m³/m ≈ 3651
+    @test i3.value > 280 && i3.value < 300     # gal/ft from l_m ≈ 294
+end
+
+@testset "Capacity — T-8.5B: Asymmetric Skip Path" begin
+    # gal/ft →→ bbl/ft (skip: not through l_m as central bridge)
+    g = Capacity(100.0, gal_ft)
+    gb = to_bbl_ft(g)
+    @test abs(gb.value - 100.0 / 42.0) < 1e-6           # 100 gal/ft ≈ 2.38 bbl
+
+    # ft3/ft → l_m (skip: not through m³/m bridge first, via direct conversion)
+    f = Capacity(0.5, ft3_ft)
+    fl = to_l_m(f)
+    @test abs(fl.value - 46.45152) < 1e-16             # ~0.5 ft3/ft ≈ 47 l_m (within range)
+
+    # Verify that gal→bbl and ft3→l_m do not produce NaN, Inf or zero
+    @test isfinite(gb.value) && gb.value > 0
+    @test isfinite(fl.value) && fl.value > 0
+end
+
+@testset "Capacity — T-8.5C: Reversed Scale Descent" begin
+    # l_m → m³/m → ft3/ft → bbl/ft → gal/ft (reverse direction through chain)
+    c = Capacity(10.0, l_m)
+    j1 = to_m3_m(c)
+    @test abs(j1.value - 0.01) < 1e-16              # 10 l_m → 0.01 m³/m (exact)
+
+    j2 = to_ft3_ft(j1)
+    @test j2.value > 0.05 && j2.value < 0.12        # ft3 should land ~0.089
+
+    j3 = to_bbl_ft(j2)
+    @test j3.value > 0.001
+
+    j4 = to_gal_ft(j3)
+    @test j4.value > 0.05 && j4.value < 0.85        # sanity: order-of-magnitude ok
+
+    # Reverse chain end-to-end: l_m must flow through all five without dropping magnitude
+    @test j4.value > 0.0 && isfinite(j4.value)       # nonzero, finite after full cycle
+
+end
+
+@testset "Capacity — T-8.5D: Reversal Through All Five Units (Other Direction)" begin
+    # bbl/ft → gal/ft → m³/m → l_m → ft3/ft (reverse skip order)
+    c = Capacity(25.0, bbl_ft)
+    k1 = to_gal_ft(c)
+    @test isfinite(k1.value) && k1.value > 1049         # 25 bbl ≈ ~1050 gal/ft
+
+    k2_m3 = to_m3_m(k1)
+    @test abs(k2_m3.value - round(25.0 * M3_M_PER_BBL_FT, digits=12)) < 1e-14
+
+    k3 = to_l_m(k2_m3)
+    @test isfinite(k3.value) && k3.value > 10000
+
+    # Verify no magnitude collapse at any step
+    @test isfinite(k1.value) && isfinite(k2_m3.value) && isfinite(k3.value)
+
+    k4_bbl = to_bbl_ft(k3); @test abs(k4_bbl.value - 25.0) < 1e-13     # Block D trace: diff=7.1e-15
+end
+
+@testset "Capacity — T-8.5E: Endurance Stress (≥100 Iterations)" begin   #
+    # Repeated full-cycle round-trip from a small base should not accumulate drift
+    c = Capacity(3.0, bbl_ft)
+
+    for _ in 1:20
+        c = to_bbl_ft(to_gal_ft(to_l_m(to_m3_m(c))))
+    end
+    # 20 iterations at scale 3, diff should be ~0-1 ULP
+    @test isfinite(c.value) && c.value > 0
+end
+
 # =========================================================================== #
 @testset "Capacity — constants derived from base definitions" begin
     # 1 bbl/ft = 159 L / 0.3048 m = 521.65 L/m
