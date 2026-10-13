@@ -107,7 +107,7 @@ end
     b = Area(10.0, ft2)
     b_m = to_m2(b)
     b_in = to_in2(b_m)
-    b_back = to_m2(thru_unit(b_in))   # back through in²
+    b_back = to_m2(b_in)   # in² → m² round-trip
     @test b_back.value ≈ b_m.value atol=1e-12
 
     # Large value round-trip: 10,000 ft² → m² → in² → ft² preserves order
