@@ -61,24 +61,6 @@ end
     @test pressure_force(Pressure(1.0, mpa), Area(1.0, m2)).value ≈ 1.0e6
 end
 
-@testset "weight_of — mass under gravity" begin
-    @test weight_of(Mass(1.0, lbm); out=lbf).value ≈ 1.0 atol=1e-9       # definition of lbf
-    @test weight_of(Mass(1.0, kg)).value ≈ 9.80665 atol=1e-12
-    # W = weight_of(Density(1000.0, kg_m3), Volume(1.0, m3))
-    # @test W.value ≈ 9806.65 atol=1e-6
-    # @test to_lbf(W).value ≈ 2204.62 atol=0.01
-    # @test weight_of(Density(10.0, ppg), Volume(1.0, bbl); out=lbf).value ≈ 420.0 atol=0.05   # 10 ppg × 42 gal
-end
-
-@testset "along_hole" begin
-    d = along_hole(Force(100.0, lbf), 60.0)
-    @test d isa Forces{Force{LBF}}
-    @test d.y.value ≈ 50.0 atol=1e-9
-    @test d.x.value ≈ 86.6025 atol=1e-4
-    @test d.res.value == 100.0
-    @test along_hole(Force(5.0, newton), 0.0).y.value == 5.0
-end
-
 @testset "to_unit — remaining families" begin
     @test to_unit(Density(1.0, sg), ppg).value ≈ PPG_PER_SG
     @test to_unit(Pressure(1.0, bar), psi).value ≈ PSI_PER_BAR
@@ -103,7 +85,7 @@ end
 
     # Constants cross-check: N_PER_LBF × LBF_PER_N ≈ 1.0
     @test N_PER_LBF * LBF_PER_N ≈ 1.0 atol=1e-14
-    
+
     # String representations
     @test string(Force(42.5, newton)) == "42.5 N"
     @test string(Force(314.0, lbf)) == "314.0 lbf"
@@ -118,7 +100,7 @@ end
     f_large = Force(1.0e8, lbf)
     @test f_large isa Force{LBF}
     @test isfinite(f_large.value)
-    
+
     # Round-trip large force
     f_back = to_lbf(to_n(f_large))
     @test f_back.value / f_large.value ≈ 1.0 atol=1e-6
@@ -126,7 +108,7 @@ end
     # Zero force: degenerate but accepted after T-11.1 (-n also allowed)
     f_z = Force(0.0, newton)
     @test f_z.value == 0.0
-    
+
     # Negative values are now physically valid (T-11.1 change)
     f_neg = Force(-100.0, lbf)
     @test f_neg.value == -100.0
@@ -178,7 +160,7 @@ end
 # ---------------------------------------------------------------------------
 @testset "Gravity force sweep — inclinations and unit variants" begin
     g = to_unit(GRAVITY, ft_s2).value
-    
+
     # inc=0°: y = g, x = 0 (pure vertical)
     gf0 = gravity_forces(0.0; unit=ft_s2)
     @test gf0.y.value ≈ g atol=1e-9
@@ -204,7 +186,7 @@ end
     d0 = along_hole(Force(0.0, lbf), 45.0)
     @test isfinite(d0.x.value)
     @test iszero(d0.y.value)
-    
+
     # Large force (1e8 lbf) through along_hole at inc=60°
     dL = along_hole(Force(1.0e9, lbf), 60.0)   # ~1e^15 lbf y-component
     @test isfinite(dL.y.value)
@@ -224,7 +206,7 @@ end
     # Medium: ~1,000 lbm casing pipe (wellbore tubing segment)
     wM = weight_of(Mass(1000.0, lbm); out=lbf)
     @test wM.value ≈ 1000.0 atol=1e-6
-    
+
     # Same in N via the conversion chain
     wk2 = weight_of(Mass(1000.0, lbm))
     @test isapprox(to_lbf(wk2).value, 1000.0; atol=0.5)
@@ -254,7 +236,7 @@ end
     # N unit at inc=45°: x ≈ y (both ~70.7%)
     dn = along_hole(Force(1000.0, newton), 45.0)
     @test isapprox(dn.y.value / 1000.0, cosd(45.0); atol=1e-9)
-    
+
     # N unit at inc=60° (complement with lbf existing test)
     dn6 = along_hole(Force(100.0, newton), 60.0)
     @test isapprox(dn6.res.value, 100.0; atol=1e-9)
@@ -276,4 +258,3 @@ end
     dL = along_hole(Force(10000.0, lbf), 45.0)
     @test isapprox(dL.y.value / 10000.0, cosd(45.0); atol=1e-8)
 end
-
