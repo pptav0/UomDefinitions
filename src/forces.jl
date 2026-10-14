@@ -23,9 +23,9 @@ const LBF_PER_N = 1 / N_PER_LBF
 
 Typed force. Units: ``N``, ``LBF``.
 
-Force represents a directional physical interaction — thrust, tension, hook load, or 
+Force represents a directional physical interaction — thrust, tension, hook load, or
 pressure-induced product. Sign indicates direction relative to primary applied force:
- positive = applied/injection direction; zero = no load (degenerate); 
+ positive = applied/injection direction; zero = no load (degenerate);
 negative = opposing/gravity pullback (physically valid).
 
 Note: Large pressure-area products can overflow Float64. Downstream consumers should check
@@ -84,9 +84,9 @@ contribution), `x = g·sin(inc)` (normal), `res = g`.
 """
 function gravity_forces(inc_deg::Real; unit::AccelerationUnit=ft_s2)
     g = to_unit(GRAVITY, unit).value
-    return Forces(Acceleration(g * sind(inc_deg), unit),
-                  Acceleration(g * cosd(inc_deg), unit),
-                  Acceleration(g, unit))
+    return Forces(Acceleration(g * sind(inc_deg), unit),    # x
+                  Acceleration(g * cosd(inc_deg), unit),    # y
+                  Acceleration(g, unit))                    # res
 end
 
 """
@@ -103,10 +103,14 @@ pressure_force(ΔP::Pressure, A::Area; out::ForceUnit=newton) =
 
 Weight under standard gravity: `ρ · V · g` or `m · g`.
 """
-weight_of(m::Mass; out::ForceUnit=newton) =
-    to_unit(Force(to_kg(m).value * GRAVITY.value, newton), out)
-weight_of(ρ::Density, V::Volume; out::ForceUnit=newton) =
-    weight_of(Mass(to_kg_m3(ρ).value * to_m3(V; digits=12).value, kg); out=out)
+function weight_of(m::Mass; out::ForceUnit=newton)
+    value = to_kg(m).value * GRAVITY.value
+    to_unit(Force(value, newton), out)
+end
+function weight_of(ρ::Density, V::Volume; out::ForceUnit=newton)
+    value = to_kg_m3(ρ).value * to_m3(V).value
+    weight_of(Mass(value, kg); out=out)
+end
 
 """
     along_hole(F::Force, inc_deg) -> Forces{Force}
