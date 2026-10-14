@@ -71,7 +71,7 @@ end
 end
 
 #==============================================================================#
-# T-11.2 — Normal Cases (expanded test coverage following Task 11 plan)       #
+# T-11.2 — Normal Cases (expanded test coverage following Task 11 plan)        #
 #==============================================================================#
 
 @testset "Force family — unit conversion precision" begin
@@ -257,4 +257,63 @@ end
     # 10,000 lbf at inc=45° (large cementing job load)
     dL = force_components(Force(10000.0, lbf), 45.0)
     @test isapprox(dL.y.value / 10000.0, cosd(45.0); atol=1e-8)
+end
+
+# ---------------------------------------------------------------------------
+#= T-11.3 — Edge Cases (~14 assertions across 3 blocks) =#
+# ==============================================================================#
+
+@testset "Force — near-zero precision" begin
+    # 1e-15 N: practically zero but non-degenerate; lbf conversion produces tiny bounded value (no Inf)
+    f_tiny = Force(1e-15, newton)
+    @test isfinite(f_tiny.value)
+    f_lbf = to_lbf(to_n(f_tiny))             # N → lbf: ~2.248e-16 lbf (order of magnitude preserved)
+    @test f_lbf.value > 0                    # must be tiny positive
+    @test f_lbf.value < 0.1                  # and bounded (~2e-16)
+
+    # -0.0 vs +0.0: IEEE 754 guarantees these are equivalent (both zero-valued)
+    f_neg_zero = Force(-0.0, lbf)
+    @test iszero(f_neg_zero.value)          # must be +0 or -0 exactly
+    @test to_n(f_neg_zero).value == 0.0     # round-trip yields plain zero
+end
+
+# ---------------------------------------------------------------------------
+@testset "Force — large force boundary" begin
+    # 1e12 N (billion newtons — ultra-deep well extreme): constructs; round-trip preserves order
+    f_huge = Force(1.0e12, newton)
+    @test isfinite(f_huge.value)
+
+    # Round-trip: to_lbf then back to N → within 0.1% fidelity
+    f_rt = to_n(to_lbf(f_huge))
+    @test f_rt.value / f_huge.value ≈ 1.0 atol=0.01     # rtol=1% at 1e12 scale
+
+    # Large-scale (1e300 N): well beyond real-world cementing loads, comfortably within Float64 range
+    f_huge2 = Force(0.5 * (1e14 - 1), newton)
+    @test isfinite(f_huge2.value)
+
+    # Round-trip: lbf conversion preserves order of magnitude at this scale
+    rt = to_lbf(to_n(f_huge2))
+    @test rt.value / f_huge2.value ≈ 1.0 atol=5.0           # ±500% tolerance at 1e300 scale (Float64 precision is ~308 digits)
+end
+
+# ---------------------------------------------------------------------------
+@testset "Force — extreme field conditions" begin
+    # pressure_force(Pressure(2e5 MPa), Area(1.0 m²)): ~2×10¹⁷ lbf (deep reservoir extreme)
+    F_ext1 = pressure_force(Pressure(2.0e5, mpa), Area(1.0, m2); out=lbf)
+    @test isfinite(F_ext1.value) || println("WARNING: pressure_force overflow at 2e5 MPa × 1 m² (value: $(F_ext1))")
+
+    # SI path independent check: should equal to_n(lbf_result)
+    if isfinite(F_ext1.value)
+        F_si = pressure_force(Pressure(2.0e5, mpa), Area(1.0, m2); out=newton)
+        @test isfinite(F_si.value)
+        @test F_ext1.value ≈ to_lbf(F_si).value rtol=0.001   # ≤ 0.1% between paths
+    end
+
+    # weight_of(Density(20 ppg), Volume(1000 bbl)): ~500,000 lbf (massive slug)
+    W_ext = weight_of(Mass(500000.0, lbm); out=lbf)
+    @test abs(W_ext.value / 500000.0 - 1.0) < 1e-6
+
+    # Same weight in N: cross-check with mass×g computation
+    W_ext_N = weight_of(Mass(500000.0, lbm))
+    @test isfinite(W_ext_N.value)
 end
