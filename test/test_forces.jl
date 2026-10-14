@@ -259,9 +259,9 @@ end
     @test isapprox(dL.y.value / 10000.0, cosd(45.0); atol=1e-8)
 end
 
-# ---------------------------------------------------------------------------
-#= T-11.3 — Edge Cases (~14 assertions across 3 blocks) =#
-# ==============================================================================#
+#==============================================================================#
+# T-11.3 — Edge Cases (~14 assertions across 3 blocks)                         #
+#==============================================================================#
 
 @testset "Force — near-zero precision" begin
     # 1e-15 N: practically zero but non-degenerate; lbf conversion produces tiny bounded value (no Inf)
@@ -316,4 +316,45 @@ end
     # Same weight in N: cross-check with mass×g computation
     W_ext_N = weight_of(Mass(500000.0, lbm))
     @test isfinite(W_ext_N.value)
+end
+
+# ==============================================================================#
+#= T-11.4 — Guard / Failure Cases (InvalidValueError testing) =#
+# ==============================================================================#
+
+@testset "Force — NaN/Inf rejection" begin
+    # NaN is rejected: both unit variants
+    @test_throws InvalidValueError Force(NaN, newton)
+    @test_throws InvalidValueError Force(NaN, lbf)
+
+    # Inf / -Inf are also rejected (negative forces are valid, ∞ is not)
+    @test_throws InvalidValueError Force(Inf, newton)
+    @test_throws InvalidValueError Force(-Inf, lbf)
+end
+
+# ---------------------------------------------------------------------------
+@testset "weight_of — NaN/Inf mass rejection" begin
+    # Mass(NaN) → weight throws (no real mass is NaN)
+    @test_throws InvalidValueError weight_of(Mass(NaN, kg))
+    @test_throws InvalidValueError weight_of(Mass(NaN, lbm))
+
+    # Same for inf: no physical mass reaches infinity
+    @test_throws InvalidValueError weight_of(Mass(Inf, kg))
+    @test_throws InvalidValueError weight_of(Mass(-Inf, lbm))
+
+    # Density × Volume: NaN density → intermediate NaN mass → Force constructor error
+    V_1 = Volume(1.0, bbl)
+    @test_throws InvalidValueError weight_of(Density(NaN, ppg), V_1; out=lbf)
+
+    # Same for inf density
+    @test_throws InvalidValueError weight_of(Density(Inf, sg), V_1; out=newton)
+end
+
+# ---------------------------------------------------------------------------
+@testset "force_components — NaN/Inf angle and force rejection" begin
+    # NaN angle: sind/cosd(NaN) = NaN → Force constructor rejects NaN → throws
+    @test_throws InvalidValueError force_components(Force(100.0, lbf), NaN)
+
+    # Inf force → InvalidValueError (Force constructor blocks it before decomposition)
+    @test_throws InvalidValueError force_components(Force(Inf, lbf), 30.0)
 end
