@@ -94,8 +94,11 @@ end
 
 Force of a (differential) pressure acting on an area: `ΔP · A`.
 """
-pressure_force(ΔP::Pressure, A::Area; out::ForceUnit=newton) =
-    to_unit(Force(to_pa(ΔP).value * to_m2(A).value, newton), out)
+function pressure_force(ΔP::Pressure, A::Area; out::ForceUnit=newton)
+    pressure = to_pa(ΔP).value
+    area     = to_m2(A).value
+    to_unit(Force(pressure * area, newton), out)
+end
 
 """
     weight_of(ρ::Density, V::Volume; out=newton) -> Force
