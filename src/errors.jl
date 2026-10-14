@@ -75,6 +75,16 @@ Base.showerror(io::IO, ::ZeroCapacityError) = print(
     "ZeroCapacityError: capacity per length cannot be zero (physical impossibility: OD=ID implies solid rod, not annulus)",
 )
 
+"""
+    AngleValueError
+
+Thrown when a angle value `> 360` is mathematically invalid.
+"""
+struct AngleValueError <: Exception end
+
+Base.showerror(io::IO, ::AngleValueError) =
+    print(io, "AngleValueError: greater than 360 is mathematically invalid")
+
 
 # ------------------------------------------------------------------
 # Validation helpers

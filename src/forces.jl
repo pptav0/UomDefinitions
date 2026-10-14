@@ -97,8 +97,8 @@ Decompose a vertical force at an inclined point: `y = F·cos(inc)` (axial),
 `x = F·sin(inc)` (normal), `res = F`. Same convention as `gravity_forces`.
 """
 function force_components(F::Force{U}, inc_deg::Real) where {U}
-    isfinite(inc_deg)      || throw(InvalidValueError())
-    abs(inc_deg) <= 360.0  || throw(InvalidValueError())
+    isfinite(inc_deg)       || throw(InvalidValueError())
+    abs(inc_deg) <= 360.0   || throw(AngleValueError())
 
     x = Force{U}(F.value * sind(inc_deg))
     y = Force{U}(F.value * cosd(inc_deg))

@@ -27,7 +27,8 @@ include("./forces.jl")        # needs Pressure, Area, Density, Volume, Mass, Acc
 
 
 # Error types for diameter validation (Phase 1 Task 1.0)
-export NegativeValueError, ZeroCapacityError, ZeroValueError, InvalidValueError, BelowAbsoluteZeroError
+export NegativeValueError, ZeroValueError, InvalidValueError
+export ZeroCapacityError, BelowAbsoluteZeroError, AngleValueError
 
 # re-export everything you want public
 export Uom
