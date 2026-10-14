@@ -358,3 +358,19 @@ end
     # Inf force → InvalidValueError (Force constructor blocks it before decomposition)
     @test_throws InvalidValueError force_components(Force(Inf, lbf), 30.0)
 end
+
+# ---------------------------------------------------------------------------
+@testset "force_components — angle > 360° rejection (AngleValueError)" begin
+    # Angle above 360: throws the newly introduced guard
+    @test_throws AngleValueError force_components(Force(100.0, lbf), 361.0)
+
+    # Negative angle below -360: also rejected by abs(inclination) > 360
+    @test_throws AngleValueError force_components(Force(100.0, lbf), -400.0)
+
+    # Boundary — exactly ±360° should pass (abs(360) == 360, not > 360)
+    c360 = force_components(Force(100.0, lbf), 360.0)
+    @test isfinite(c360.x.value) && isfinite(c360.y.value)
+
+    c_m360 = force_components(Force(100.0, lbf), -360.0)
+    @test isfinite(c_m360.x.value) && isfinite(c_m360.y.value)
+end
