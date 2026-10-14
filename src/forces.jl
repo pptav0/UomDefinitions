@@ -21,14 +21,30 @@ const LBF_PER_N = 1 / N_PER_LBF
 """
     Force{U<:ForceUnit}(value)
 
-Typed force. Units: `N`, `LBF`.
+Typed force. Units: ``N``, ``LBF``.
+
+Force represents a directional physical interaction — thrust, tension, hook load, or 
+pressure-induced product. Sign indicates direction relative to primary applied force:
+ positive = applied/injection direction; zero = no load (degenerate); 
+negative = opposing/gravity pullback (physically valid).
+
+Note: Large pressure-area products can overflow Float64. Downstream consumers should check
+result finiteness before using hook loads or ECD calculations.
+
+Throws:
+- ``InvalidValueError`` if ``value`` is ``NaN``, ``Inf``, or ``-Inf``
+  (negative values are physically valid for opposite-direction forces)
 """
 mutable struct Force{U<:ForceUnit}
     value::Float64
+
+    function Force{U}(value::Real) where {U<:ForceUnit}
+        isfinite(value)       || throw(InvalidValueError())
+        new{U}(value)  # negative values now allowed (opposite direction forces)
+    end
 end
 
-Force(v::Real, ::N)   = Force{N}(float(v))
-Force(v::Real, ::LBF) = Force{LBF}(float(v))
+Force(v::Real, ::U) where {U<:ForceUnit} = Force{U}(Float64(v))
 
 "Convert to newtons"
 to_n(f::Force{N})   = f
