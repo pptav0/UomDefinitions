@@ -89,6 +89,20 @@ function gravity_forces(inc_deg::Real; unit::AccelerationUnit=ft_s2)
                   Acceleration(g, unit))                    # res
 end
 
+
+"""
+    force_components(F::Force, inc_deg) -> Forces{Force}
+
+Decompose a vertical force at an inclined point: `y = F·cos(inc)` (axial),
+`x = F·sin(inc)` (normal), `res = F`. Same convention as `gravity_forces`.
+"""
+function force_components(F::Force{U}, inc_deg::Real) where {U}
+    x = Force{U}(F.value * sind(inc_deg))
+    y = Force{U}(F.value * cosd(inc_deg))
+    Forces(x, y, F)
+end
+
+
 """
     pressure_force(ΔP::Pressure, A::Area; out=newton) -> Force
 
@@ -113,16 +127,4 @@ end
 function weight_of(ρ::Density, V::Volume; out::ForceUnit=newton)
     value = to_kg_m3(ρ).value * to_m3(V).value
     weight_of(Mass(value, kg); out=out)
-end
-
-"""
-    force_components(F::Force, inc_deg) -> Forces{Force}
-
-Decompose a vertical force at an inclined point: `y = F·cos(inc)` (axial),
-`x = F·sin(inc)` (normal), `res = F`. Same convention as `gravity_forces`.
-"""
-function force_components(F::Force{U}, inc_deg::Real) where {U}
-    x = Force{U}(F.value * sind(inc_deg))
-    y = Force{U}(F.value * cosd(inc_deg))
-    Forces(x, y, F)
 end
