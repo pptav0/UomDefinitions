@@ -10,9 +10,9 @@ end
 
 @testset "Area" begin
     @test to_m2(Area(1.0, ft2)).value ≈ M_PER_FT^2 atol=1e-15
-    @test to_in2(Area(1.0, ft2)).value ≈ 144.0 atol=1e-9
+    @test to_in2(Area(1.0, ft2)).value ≈ 144.0 atol=1e-12
     @test to_m2(Area(1.0, in2)).value ≈ (MM_PER_IN / 1000)^2 atol=1e-15
-    @test to_unit(Area(2.0, m2), ft2).value ≈ 2.0 / M_PER_FT^2 atol=1e-9
+    @test to_unit(Area(2.0, m2), ft2).value ≈ 2.0 / M_PER_FT^2 atol=1e-12
     @test string(Area(14.36, in2)) == "14.36 in²"
 end
 
@@ -25,7 +25,7 @@ end
 
 @testset "Acceleration and GRAVITY" begin
     @test GRAVITY isa Acceleration{M_S2} && GRAVITY.value == 9.80665
-    @test to_ft_s2(GRAVITY).value ≈ 9.80665 * FT_PER_M atol=1e-9          # 32.174
+    @test to_ft_s2(GRAVITY).value ≈ 9.80665 * FT_PER_M atol=1e-12          # 32.174
     @test to_m_s2(to_ft_s2(GRAVITY)).value ≈ 9.80665 atol=1e-12
     @test to_unit(GRAVITY, ft_s2) isa Acceleration{FT_S2}
     @test string(GRAVITY) == "9.80665 m/s²"
@@ -34,20 +34,20 @@ end
 @testset "Force family" begin
     f = Force(100.0, lbf)
     @test N_PER_LBF == 4.4482216152605
-    @test to_n(f).value ≈ 444.82216152605 atol=1e-9
+    @test to_n(f).value ≈ 444.82216152605 atol=1e-12
     @test to_lbf(to_n(f)).value ≈ 100.0 atol=1e-12
     @test to_unit(f, newton) isa Force{N}
     @test string(Force(10.0, newton)) == "10.0 N" && string(f) == "100.0 lbf"
     # the two unit chains agree: Pa·m² per psi·in² equals N per lbf
-    @test PA_PER_PSI * (MM_PER_IN / 1000)^2 ≈ N_PER_LBF rtol=1e-9
+    @test PA_PER_PSI * (MM_PER_IN / 1000)^2 ≈ N_PER_LBF rtol=1e-10
 end
 
 @testset "Forces{Q} and gravity_forces" begin
     g = gravity_forces(60.0)
     @test g isa Forces{Acceleration{FT_S2}}
     @test g.res.value ≈ to_ft_s2(GRAVITY).value
-    @test g.y.value ≈ g.res.value * 0.5 atol=1e-9
-    @test g.x.value ≈ g.res.value * sqrt(3) / 2 atol=1e-9
+    @test g.y.value ≈ g.res.value * 0.5 atol=1e-12
+    @test g.x.value ≈ g.res.value * sqrt(3) / 2 atol=1e-12
     gsi = gravity_forces(0.0; unit=m_s2)
     @test gsi isa Forces{Acceleration{M_S2}} && gsi.y.value ≈ 9.80665
 end
@@ -56,8 +56,8 @@ end
     A = Area(π / 4 * 4.276^2, in2)                       # 4.276" pipe bore
     F = pressure_force(Pressure(1000.0, psi), A; out=lbf)
     @test F isa Force{LBF}
-    @test F.value ≈ 1000.0 * π / 4 * 4.276^2 rtol=1e-9    # psi × in² = lbf exactly
-    @test to_n(F).value ≈ pressure_force(Pressure(1000.0, psi), A).value rtol=1e-9
+    @test F.value ≈ 1000.0 * π / 4 * 4.276^2 rtol=1e-10    # psi × in² = lbf exactly
+    @test to_n(F).value ≈ pressure_force(Pressure(1000.0, psi), A).value rtol=1e-12
     @test pressure_force(Pressure(1.0, mpa), Area(1.0, m2)).value ≈ 1.0e6
 end
 
@@ -119,12 +119,12 @@ end
     # Same bore as existing test, different ΔP: 500 psi → half the force
     A = Area(π / 4 * 4.276^2, in2)                  # 4.276" pipe bore
     F = pressure_force(Pressure(500.0, psi), A; out=lbf)
-    @test F.value ≈ 500.0 * π / 4 * 4.276^2 rtol=1e-9
+    @test F.value ≈ 500.0 * π / 4 * 4.276^2 rtol=1e-10
 
     # Zero ΔP → zero force (should not crash or produce NaN)
     Fz = pressure_force(Pressure(0.0, psi), A; out=newton)
     @test isfinite(Fz.value)
-    @test Fz.value ≈ 0.0 atol=1e-9
+    @test Fz.value ≈ 0.0 atol=1e-12
 
     # SI chain: same ΔP in Pa, different A → cross-check with US path
     F_pa = pressure_force(Pressure(3447.38, pa), Area(0.01, m2); out=lbf)  # 1 psi on 0.01 m²
@@ -135,26 +135,26 @@ end
 @testset "Force-components decomposition — standard angles" begin
     # inc=0°: y = F, x = 0 (vertical hook load)
     d0 = force_components(Force(250.0, lbf), 0.0)
-    @test d0.y.value ≈ 250.0 atol=1e-9
+    @test d0.y.value ≈ 250.0 atol=1e-12
     @test d0.x.value   == 0.0
 
     # inc=30°: y = F × cosd(30) = 0.866F, x = F × sind(30) = 0.5F
     d30 = force_components(Force(200.0, lbf), 30.0)
-    @test isapprox(d30.y.value / 200.0, cosd(30.0); atol=1e-9)
-    @test isapprox(d30.x.value / 200.0, sind(30.0);   atol=1e-9)
+    @test isapprox(d30.y.value / 200.0, cosd(30.0); atol=1e-12)
+    @test isapprox(d30.x.value / 200.0, sind(30.0);   atol=1e-12)
 
     # inc=45°: sin equals cos — boundary check
     d45 = force_components(Force(100.0, newton), 45.0)
-    @test isapprox(abs(d45.x.value), abs(d45.y.value); atol=1e-9)
+    @test isapprox(abs(d45.x.value), abs(d45.y.value); atol=1e-12)
 
     # inc=90°: y = 0, x = F (pure normal / shoulder)
     d90 = force_components(Force(1.0, newton), 90.0)
-    @test d90.x.value ≈ 1.0 atol=1e-9
+    @test d90.x.value ≈ 1.0 atol=1e-12
     @test d90.y.value == 0.0
 
     # N unit at inc=60° (complement of existing lbf test)
     dn = force_components(Force(5000.0, newton), 60.0)
-    @test isapprox(dn.x.value / 5000.0, sind(60.0); atol=1e-9)
+    @test isapprox(dn.x.value / 5000.0, sind(60.0); atol=1e-12)
 end
 
 # ---------------------------------------------------------------------------
@@ -163,22 +163,22 @@ end
 
     # inc=0°: y = g, x = 0 (pure vertical)
     gf0 = gravity_forces(0.0; unit=ft_s2)
-    @test gf0.y.value ≈ g atol=1e-9
+    @test gf0.y.value ≈ g atol=1e-12
     @test gf0.x.value == 0.0
 
     # inc=45°: x and y share √2/2
     gf45 = gravity_forces(45.0; unit=ft_s2)
-    @test isapprox(gf45.y.value / g, cosd(45.0); atol=1e-9)
-    @test isapprox(gf45.x.value / g, sind(45.0); atol=1e-9)
+    @test isapprox(gf45.y.value / g, cosd(45.0); atol=1e-12)
+    @test isapprox(gf45.x.value / g, sind(45.0); atol=1e-12)
 
     # inc=90°: y = 0, x = g (pure normal)
     gf90 = gravity_forces(90.0; unit=m_s2)
-    @test isapprox(gf90.x.value / GRAVITY.value, 1.0; atol=1e-9)
+    @test isapprox(gf90.x.value / GRAVITY.value, 1.0; atol=1e-12)
     @test gf90.y.value == 0.0
 
     # m_s² variant at inc=60°
     gm6 = gravity_forces(60.0; unit=m_s2)
-    @test isapprox(gm6.res.value / GRAVITY.value, 1.0; atol=1e-9)
+    @test isapprox(gm6.res.value / GRAVITY.value, 1.0; atol=1e-12)
 end
 
 @testset "Force-components — zero & large force edge cases" begin
@@ -197,7 +197,7 @@ end
 @testset "Weight of mass — oilfield values and paths" begin
     # Small: Mass(1.0, lbm) → 1.0 lbf (definition of lbf under standard g)
     w1 = weight_of(Mass(1.0, lbm); out=lbf)
-    @test w1.value ≈ 1.0 atol=1e-9
+    @test w1.value ≈ 1.0 atol=1e-12
 
     # kg path
     wk = weight_of(Mass(2.5, kg))
@@ -235,11 +235,11 @@ end
 @testset "Force-components — N unit & force sign propagation" begin
     # N unit at inc=45°: x ≈ y (both ~70.7%)
     dn = force_components(Force(1000.0, newton), 45.0)
-    @test isapprox(dn.y.value / 1000.0, cosd(45.0); atol=1e-9)
+    @test isapprox(dn.y.value / 1000.0, cosd(45.0); atol=1e-12)
 
     # N unit at inc=60° (complement with lbf existing test)
     dn6 = force_components(Force(100.0, newton), 60.0)
-    @test isapprox(dn6.res.value, 100.0; atol=1e-9)
+    @test isapprox(dn6.res.value, 100.0; atol=1e-12)
 
     # Force sign propagation: negative force stays negative through decomposition
     neg_f = force_components(Force(-100.0, lbf), 45.0)
@@ -251,7 +251,7 @@ end
 @testset "Force-components — larger force magnitudes (lbf)" begin
     # 1,000 lbf at inc=60° (standard casing lift scenario)
     dK = force_components(Force(1000.0, lbf), 60.0)
-    @test isapprox(dK.y.value / 1000.0, cosd(60.0); atol=1e-9)
+    @test isapprox(dK.y.value / 1000.0, cosd(60.0); atol=1e-12)
     @test abs(dK.res.value - 1000.0) < 1e-3
 
     # 10,000 lbf at inc=45° (large cementing job load)
