@@ -47,21 +47,16 @@ const LB_PER_KG  = 1 / KG_PER_LB # ≈ 2.2046226218
 
 # Conversion functions — return Mass in target unit
 """Convert to kg."""
-to_kg(m::Mass{KG})  = m
-to_kg(m::Mass{LBM}) = Mass{KG}(m.value * KG_PER_LB)
+to_kg(m::Mass{KG})   = m
+to_kg(m::Mass{LBM})  = Mass{KG}(m.value * KG_PER_LB)
 """Convert to lbm."""
 to_lbm(m::Mass{LBM}) = m
-to_lbm(m::Mass{KG}) = Mass{LBM}(m.value * LB_PER_KG)
-
-
-# Convenient numeric + unit constructors (delegates to inner constructor)
-to_kg(v::Real, ::KG)   = to_kg(Mass(v, kg))
-to_lbm(v::Real, ::LBM) = to_lbm(Mass(v, lbm))
+to_lbm(m::Mass{KG})  = Mass{LBM}(m.value * LB_PER_KG)
 
 "Convert mass to the given unit type."
 function to_unit(m::Mass{U}, ::U2) where {U<:MassUnit, U2<:MassUnit}
     U === U2 && return m              # same unit — identity
-    return to_lbm(to_kg(m))        # two-step through KG as canonical
+    return U2 === KG ? to_kg(m) : to_lbm(m)  # direct dispatch to target unit
 end
 
 # Pretty printing — each unit family displays its own unit label
