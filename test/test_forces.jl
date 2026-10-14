@@ -132,28 +132,28 @@ end
     @test F_pa.value > 0.0
 end
 
-@testset "Along-hole decomposition — standard angles" begin
+@testset "Force-components decomposition — standard angles" begin
     # inc=0°: y = F, x = 0 (vertical hook load)
-    d0 = along_hole(Force(250.0, lbf), 0.0)
+    d0 = force_components(Force(250.0, lbf), 0.0)
     @test d0.y.value ≈ 250.0 atol=1e-9
     @test d0.x.value   == 0.0
 
     # inc=30°: y = F × cosd(30) = 0.866F, x = F × sind(30) = 0.5F
-    d30 = along_hole(Force(200.0, lbf), 30.0)
+    d30 = force_components(Force(200.0, lbf), 30.0)
     @test isapprox(d30.y.value / 200.0, cosd(30.0); atol=1e-9)
     @test isapprox(d30.x.value / 200.0, sind(30.0);   atol=1e-9)
 
     # inc=45°: sin equals cos — boundary check
-    d45 = along_hole(Force(100.0, newton), 45.0)
+    d45 = force_components(Force(100.0, newton), 45.0)
     @test isapprox(abs(d45.x.value), abs(d45.y.value); atol=1e-9)
 
     # inc=90°: y = 0, x = F (pure normal / shoulder)
-    d90 = along_hole(Force(1.0, newton), 90.0)
+    d90 = force_components(Force(1.0, newton), 90.0)
     @test d90.x.value ≈ 1.0 atol=1e-9
     @test d90.y.value == 0.0
 
     # N unit at inc=60° (complement of existing lbf test)
-    dn = along_hole(Force(5000.0, newton), 60.0)
+    dn = force_components(Force(5000.0, newton), 60.0)
     @test isapprox(dn.x.value / 5000.0, sind(60.0); atol=1e-9)
 end
 
@@ -181,14 +181,14 @@ end
     @test isapprox(gm6.res.value / GRAVITY.value, 1.0; atol=1e-9)
 end
 
-@testset "Along-hole — zero & large force edge cases" begin
-    # Zero force through along_hole: should not produce NaN
-    d0 = along_hole(Force(0.0, lbf), 45.0)
+@testset "Force-components — zero & large force edge cases" begin
+    # Zero force through force_components: should not produce NaN
+    d0 = force_components(Force(0.0, lbf), 45.0)
     @test isfinite(d0.x.value)
     @test iszero(d0.y.value)
 
-    # Large force (1e8 lbf) through along_hole at inc=60°
-    dL = along_hole(Force(1.0e9, lbf), 60.0)   # ~1e^15 lbf y-component
+    # Large force (1e8 lbf) through force_components at inc=60°
+    dL = force_components(Force(1.0e9, lbf), 60.0)   # ~1e^15 lbf y-component
     @test isfinite(dL.y.value)
     @test isfinite(dL.x.value)
 end
@@ -232,29 +232,29 @@ end
     @test abs(Wc.value / 50000.0 - 1.0) < 1e-6
 end
 
-@testset "Along-hole — N unit & force sign propagation" begin
+@testset "Force-components — N unit & force sign propagation" begin
     # N unit at inc=45°: x ≈ y (both ~70.7%)
-    dn = along_hole(Force(1000.0, newton), 45.0)
+    dn = force_components(Force(1000.0, newton), 45.0)
     @test isapprox(dn.y.value / 1000.0, cosd(45.0); atol=1e-9)
 
     # N unit at inc=60° (complement with lbf existing test)
-    dn6 = along_hole(Force(100.0, newton), 60.0)
+    dn6 = force_components(Force(100.0, newton), 60.0)
     @test isapprox(dn6.res.value, 100.0; atol=1e-9)
 
     # Force sign propagation: negative force stays negative through decomposition
-    neg_f = along_hole(Force(-100.0, lbf), 45.0)
+    neg_f = force_components(Force(-100.0, lbf), 45.0)
     @test neg_f.res.value < 0
     @test neg_f.y.value ≈ -70.71 atol=0.5
 end
 
 # ---------------------------------------------------------------------------
-@testset "Along-hole — larger force magnitudes (lbf)" begin
+@testset "Force-components — larger force magnitudes (lbf)" begin
     # 1,000 lbf at inc=60° (standard casing lift scenario)
-    dK = along_hole(Force(1000.0, lbf), 60.0)
+    dK = force_components(Force(1000.0, lbf), 60.0)
     @test isapprox(dK.y.value / 1000.0, cosd(60.0); atol=1e-9)
     @test abs(dK.res.value - 1000.0) < 1e-3
 
     # 10,000 lbf at inc=45° (large cementing job load)
-    dL = along_hole(Force(10000.0, lbf), 45.0)
+    dL = force_components(Force(10000.0, lbf), 45.0)
     @test isapprox(dL.y.value / 10000.0, cosd(45.0); atol=1e-8)
 end

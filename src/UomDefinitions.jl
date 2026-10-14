@@ -108,6 +108,6 @@ export MassUnit, Mass, KG, LBM, kg, lbm, to_kg, to_lbm
 export AccelerationUnit, Acceleration, M_S2, FT_S2, m_s2, ft_s2, to_m_s2, to_ft_s2, GRAVITY
 # - Force, decomposition and primitives
 export ForceUnit, Force, N, LBF, newton, lbf, to_n, to_lbf, N_PER_LBF, LBF_PER_N
-export Forces, gravity_forces, pressure_force, weight_of, along_hole
+export Forces, gravity_forces, pressure_force, weight_of, force_components
 
 end # module UomDefinitions

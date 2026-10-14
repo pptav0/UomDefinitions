@@ -113,10 +113,10 @@ function weight_of(ρ::Density, V::Volume; out::ForceUnit=newton)
 end
 
 """
-    along_hole(F::Force, inc_deg) -> Forces{Force}
+    force_components(F::Force, inc_deg) -> Forces{Force}
 
 Decompose a vertical force at an inclined point: `y = F·cos(inc)` (axial),
 `x = F·sin(inc)` (normal), `res = F`. Same convention as `gravity_forces`.
 """
-along_hole(F::Force{U}, inc_deg::Real) where {U} =
+force_components(F::Force{U}, inc_deg::Real) where {U} =
     Forces(Force{U}(F.value * sind(inc_deg)), Force{U}(F.value * cosd(inc_deg)), F)
