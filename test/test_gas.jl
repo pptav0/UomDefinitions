@@ -66,7 +66,7 @@ end
     @test_throws InvalidValueError GasConc(-Inf, scf_bbl)
     @test_throws InvalidValueError GasRate(-Inf, scfm)
     # NOTE: GasRate{SCMM} is also checked below via the negative test
-    @test_throws InvalidValueError GasRate(Inf * 0.0, scmm)  # NotNaN trick — actually -inf via float
+    @test_throws InvalidValueError GasRate(Inf * 0.0, scmm)
 end
 
 @testset "Gas — failure: negative values throw NegativeValueError" begin
@@ -79,6 +79,14 @@ end
     # to_scfm(v, u) and to_scmm(v, u) should also validate via outer constructor
     @test_throws InvalidValueError to_scfm(NaN, scfm)
     @test_throws NegativeValueError to_scfm(-1.0, scmm)
+end
+
+# ===== Edge: IEEE 754 negative-zero (Option B — accept -0.0 silently) =====
+
+@testset "Gas — edge: -0.0 passes through silently (IEEE 754 compliant)" begin
+    @test GasConc(-0.0, scf_bbl).value == -0.0
+    @test GasRate(-0.0, scfm).value == -0.0
+    @test GasRate(-0.0, scmm).value == -0.0
 end
 
 # ===== Round-trip expansion (T-12.1 sub-task T-12.1c) =====
