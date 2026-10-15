@@ -14,24 +14,50 @@ const scfm    = SCFM()
 const scmm    = SCMM()
 
 """
-    GasConc{U<:GasConcUnit}(value)
-    GasRate{U<:GasRateUnit}(value)
+    GasConc{U<:GasConcUnit}(value::Real)
 
-Typed quantities for gas concentration and gas flow.
+Typed quantity for gas concentration in liquid phase (scf/bbl).
+
+Value must be finite and strictly positive. Negative dissolved gas is physically impossible.
+Throws:
+- `InvalidValueError` if value is NaN, Inf, or -Inf
+- `NegativeValueError` if value < 0
 """
 mutable struct GasConc{U<:GasConcUnit}
     value::Float64
-    # GasConc(x::Real, ::U) where {U<:GasConcUnit} = new{U}(float(x))
-end
-mutable struct GasRate{U<:GasRateUnit}
-    value::Float64
-    # GasRate(x::Real, ::U) where {U<:GasRateUnit} = new{U}(float(x))
+
+    function GasConc{U}(value::Real) where {U<:GasConcUnit}
+        isfinite(value) || throw(InvalidValueError())
+        value < 0       && throw(NegativeValueError())
+        new{U}(float(value))
+    end
 end
 
-# # ergonomic constructors
-GasConc(v::Real, ::SCF_PER_BBL) = GasConc{SCF_PER_BBL}(float(v))
-GasRate(v::Real, ::SCFM)        = GasRate{SCFM}(float(v))
-GasRate(v::Real, ::SCMM)        = GasRate{SCMM}(float(v))
+# ergonomic constructors
+GasConc(v::Real, ::U) where {U<:GasConcUnit} = GasConc{U}(Float64(v))
+
+"""
+    GasRate{U<:GasRateUnit}(value::Real)
+
+Typed quantity for gas flow rate (scfm, scmm — standard cubic feet/meters per minute).
+
+Value must be finite and strictly positive. Negative injection rate is physically impossible.
+Throws:
+- `InvalidValueError` if value is NaN, Inf, or -Inf
+- `NegativeValueError` if value < 0
+"""
+mutable struct GasRate{U<:GasRateUnit}
+    value::Float64
+
+    function GasRate{U}(value::Real) where {U<:GasRateUnit}
+        isfinite(value) || throw(InvalidValueError())
+        value < 0       && throw(NegativeValueError())
+        new{U}(float(value))
+    end
+end
+
+# ergonomic constructors
+GasRate(v::Real, ::U) where {U<:GasRateUnit} = GasRate{U}(float(v))
 
 # ========= CONSTANTS & CONVERSIONS ===========================================
 const SCF_PER_SCM     = FT3_PER_M3           # 1 scm = 35.3147 scf (see volume.jl)
