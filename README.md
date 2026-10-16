@@ -41,7 +41,21 @@ Because the unit lives in the type parameter, conversions dispatch statically an
 
 ## Gravity and force primitives
 
-`GRAVITY = Acceleration(9.80665, m_s2)` is the single gravity definition. Force arises from two products only: `pressure_force(ΔP, A)` (psi·in² = lbf, Pa·m² = N) and `weight_of(ρ, V)` / `weight_of(m)` (lbm under standard gravity = lbf, kg·g = N). `Forces{Q}(x, y, res)` is a generic decomposition over any quantity; `gravity_forces(inc)` gives gravity components at an inclination and `along_hole(F, inc)` decomposes a vertical force the same way.
+`GRAVITY = Acceleration(9.80665, m_s2)` is the single gravity definition. Force arises from two products only: `pressure_force(ΔP, A)` (psi·in² = lbf, Pa·m² = N) and `weight_of(ρ, V)` / `weight_of(m)` (lbm under standard gravity = lbf, kg·g = N).
+
+### Decompositions
+
+`Components{Q}(x, y, res)` is a generic 2D decomposition over any quantity: `x` and `y` are the two orthogonal parts and `res` is the magnitude of the vector being decomposed, so `hypot(x, y) ≈ res` always holds. The struct does not own a frame; each producing function states its own. (`Forces` is a backward-compatible alias.)
+
+Gravity is always vertical. Inclination (`inc`, measured from vertical) changes the path and how a load is carried, never gravity itself:
+
+| Function | Frame | `x` | `y` | `res` |
+|---|---|---|---|---|
+| `gravity_components(; unit)` | global | `0` | `g` (vertical) | `g` |
+| `path_components(Δmd, inc)` | global | `Δmd·sin(inc)` horizontal offset | `Δmd·cos(inc)` = ΔTVD | `Δmd` |
+| `load_components(F, inc)` | hole | `F·sin(inc)` side load on the wall | `F·cos(inc)` axial load on the hook | `F`, the vertical weight |
+
+`path_components(…).y` is the vertical step that hydrostatic pressure integrates over. `path_components` accepts `0° ≤ inc ≤ 90°` because `Length` is non-negative. `force_components` is a deprecated alias of `load_components`.
 
 `Diameter` and `Length` bridge into each other: `to_ft` / `to_m` accept a `Diameter` (e.g. a casing OD in inches becomes a `Length{FT}` for area calculations) and `to_in` / `to_mm` accept a `Length`.
 
