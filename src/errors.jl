@@ -78,12 +78,13 @@ Base.showerror(io::IO, ::ZeroCapacityError) = print(
 """
     AngleValueError
 
-Thrown when a angle value `> 360` is mathematically invalid.
+Thrown when an angle lies outside the range a function accepts
+(e.g. `|inc| > 360°`, or outside `[0°, 90°]` for `path_components`).
 """
 struct AngleValueError <: Exception end
 
 Base.showerror(io::IO, ::AngleValueError) =
-    print(io, "AngleValueError: greater than 360 is mathematically invalid")
+    print(io, "AngleValueError: angle outside the valid range for this operation")
 
 
 # ------------------------------------------------------------------

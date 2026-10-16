@@ -23,7 +23,7 @@ include("./capacity.jl")      # needs volume, pump_rates, length constants
 include("./area.jl")          # needs MM_PER_IN, M_PER_FT
 include("./mass.jl")          # needs KG_PER_LB, LB_PER_KG
 include("./acceleration.jl")  # needs M_PER_FT; defines GRAVITY
-include("./forces.jl")        # needs Pressure, Area, Density, Volume, Mass, Acceleration
+include("./forces.jl")        # needs Pressure, Area, Density, Volume, Mass, Acceleration, Length
 
 
 # Error types for diameter validation (Phase 1 Task 1.0)
@@ -109,6 +109,7 @@ export MassUnit, Mass, KG, LBM, kg, lbm, to_kg, to_lbm
 export AccelerationUnit, Acceleration, M_S2, FT_S2, m_s2, ft_s2, to_m_s2, to_ft_s2, GRAVITY
 # - Force, decomposition and primitives
 export ForceUnit, Force, N, LBF, newton, lbf, to_n, to_lbf, N_PER_LBF, LBF_PER_N
-export Forces, gravity_forces, pressure_force, weight_of, force_components
+export Components, Forces, gravity_components, path_components, load_components,
+       force_components, pressure_force, weight_of
 
 end # module UomDefinitions
