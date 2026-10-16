@@ -92,9 +92,9 @@ export ZERO_C_IN_K, ZERO_F_IN_R, ZERO_C_IN_F, F_PER_C
 
 # - Density
 export DensityUnit, Density
-export PPG, KG_M3, SG, ppg, kg_m3, sg
-export to_ppg, to_kg_m3, to_sg
-export KG_M3_PER_PPG, KG_M3_PER_SG, PPG_PER_SG
+export PPG, KG_M3, SG, PPCF, ppg, kg_m3, sg, ppcf
+export to_ppg, to_kg_m3, to_sg, to_ppcf
+export KG_M3_PER_PPG, KG_M3_PER_SG, PPG_PER_SG, KG_M3_PER_PPCF, PPCF_PER_PPG, PPCF_PER_SG
 
 # - Capacity (volume per unit length)
 export CapacityUnit, Capacity

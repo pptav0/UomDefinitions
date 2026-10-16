@@ -215,3 +215,87 @@ end
 
 	@test direct_kg.value ≈ indirect_kg.value atol=1.0
 end
+
+# ========= PPCF (pounds per cubic foot, lb/ft³) ==============================
+# Solids / casing-steel density unit. Reference: steel = 490 lb/ft³
+# (SimuUtils `STEEL_DENSITY`), i.e. ≈ 7849 kg/m³, ≈ 7.85 SG, ≈ 65.5 ppg.
+
+@testset "Density — Normal: PPCF conversions" begin
+	# unit and singleton
+	@test ppcf isa PPCF && PPCF <: DensityUnit
+	@test Density(490.0, ppcf) isa Density{PPCF}
+
+	# derived constants (1 lb/ft³ = 0.45359237 kg / 0.3048³ m³)
+	@test KG_M3_PER_PPCF ≈ 16.018463 atol=1e-6
+	@test PPCF_PER_PPG   ≈ 7.480520  atol=1e-6        # 1 ppg = 1 lb per 0.133681 ft³
+	@test PPCF_PER_SG    ≈ 62.427961 atol=1e-6        # water ≈ 62.43 lb/ft³
+	@test PPCF_PER_PPG ≈ GAL_PER_FT3 rtol=1e-9
+
+	# 1 lb/ft³ to the other three units
+	@test to_kg_m3(Density(1.0, ppcf)).value ≈ 16.018463 atol=1e-6
+	@test to_sg(Density(1.0, ppcf)).value    ≈ 0.016018463 atol=1e-9
+	@test to_ppg(Density(1.0, ppcf)).value   ≈ 1 / 7.480520 atol=1e-6
+
+	# the other three units to lb/ft³
+	@test to_ppcf(Density(1.0, ppg)).value      ≈ 7.480520 atol=1e-6
+	@test to_ppcf(Density(1000.0, kg_m3)).value ≈ 62.427961 atol=1e-6
+	@test to_ppcf(Density(1.0, sg)).value       ≈ 62.427961 atol=1e-6
+	same = Density(490.0, ppcf)
+	@test to_ppcf(same) === same                      # identity conversion returns the same object
+	@test to_ppcf(Density(490.0, ppcf)).value == 490.0
+
+	# numeric + singleton convenience forms
+	@test to_ppcf(1.0, sg).value ≈ 62.427961 atol=1e-6
+	@test to_ppcf(490.0, ppcf).value == 490.0
+	@test to_kg_m3(490.0, ppcf).value ≈ 7849.05 atol=0.01
+	@test to_ppg(490.0, ppcf).value ≈ 65.504 atol=1e-3
+	@test to_sg(490.0, ppcf).value ≈ 7.849 atol=1e-3
+
+	# to_unit and show
+	@test to_unit(Density(1.0, sg), ppcf) isa Density{PPCF}
+	@test to_unit(Density(490.0, ppcf), kg_m3).value ≈ 7849.05 atol=0.01
+	@test string(Density(490.0, ppcf)) == "490.0 lb/ft³"
+end
+
+@testset "Density — Normal: steel density reference (490 lb/ft³)" begin
+	steel = Density(490.0, ppcf)                      # SimuUtils STEEL_DENSITY
+	@test to_kg_m3(steel).value ≈ 7849.05 atol=0.01   # ≈ 7.85 g/cm³ carbon steel
+	@test to_sg(steel).value    ≈ 7.849   atol=1e-3
+	@test to_ppg(steel).value   ≈ 65.504  atol=1e-3
+	# round trips back to lb/ft³ from each unit
+	@test to_ppcf(to_kg_m3(steel)).value ≈ 490.0 rtol=1e-12
+	@test to_ppcf(to_sg(steel)).value    ≈ 490.0 rtol=1e-12
+	@test to_ppcf(to_ppg(steel)).value   ≈ 490.0 rtol=1e-12
+	# casing weight check: 7" × 6.276" wall area (ft²) × 490 lb/ft³ ≈ 25.69 ppf
+	@test (π / 4) * (7.0^2 - 6.276^2) / 144 * steel.value ≈ 25.69 atol=0.01
+end
+
+@testset "Density — Edge: PPCF boundaries and chains" begin
+	# zero and near-zero
+	@test Density(0.0, ppcf).value == 0.0
+	@test to_kg_m3(Density(0.0, ppcf)).value == 0.0
+	@test to_ppcf(Density(0.0, sg)).value == 0.0
+	@test to_kg_m3(Density(1e-9, ppcf)).value ≈ 1.6018463e-8 atol=1e-15
+	# water: 62.428 lb/ft³ is 1 SG / 8.345 ppg / 1000 kg/m³
+	water = Density(62.427961, ppcf)
+	@test to_sg(water).value ≈ 1.0 atol=1e-6
+	@test to_ppg(water).value ≈ 8.345404 atol=1e-5
+	@test to_kg_m3(water).value ≈ 1000.0 atol=1e-3
+	# 6-stage chain visiting all four units
+	chain = to_ppcf(to_sg(to_kg_m3(to_ppg(to_ppcf(to_kg_m3(Density(490.0, ppcf)))))))
+	@test chain.value ≈ 490.0 atol=1e-9
+	# Int input
+	@test Density(490, ppcf).value === 490.0
+	# cross-check: ppcf → kg/m³ direct vs ppcf → ppg → kg/m³
+	@test to_kg_m3(Density(490.0, ppcf)).value ≈ to_kg_m3(to_ppg(Density(490.0, ppcf))).value rtol=1e-12
+end
+
+@testset "Density — Failure: PPCF invalid values" begin
+	@test_throws NegativeValueError Density(-490.0, ppcf)
+	@test_throws NegativeValueError Density(-1e-9, ppcf)
+	@test_throws InvalidValueError Density(NaN, ppcf)
+	@test_throws InvalidValueError Density(Inf, ppcf)
+	@test_throws InvalidValueError Density(-Inf, ppcf)
+	@test_throws NegativeValueError to_ppcf(-1.0, sg)
+	@test_throws InvalidValueError to_ppcf(NaN, ppg)
+end
