@@ -299,3 +299,93 @@ end
 	@test_throws NegativeValueError to_ppcf(-1.0, sg)
 	@test_throws InvalidValueError to_ppcf(NaN, ppg)
 end
+
+# ========= Water density vs temperature & pressure ==========================
+# Reference: IAPWS-95 table at 1 atm (Kell rational polynomial) and the
+# compressibility rule of thumb Δρ/ρ ≈ κ_T·ΔP, κ_T = 4.5e-10 1/Pa.
+
+@testset "Water density — Normal" begin
+	ρ(T) = calc_density(Temperature(T, degC), P_ATM; out=kg_m3).value
+	@test ρ(4.0)   ≈ 999.97 atol=0.1          # maximum density
+	@test ρ(20.0)  ≈ 998.2  atol=0.1
+	@test ρ(37.0)  ≈ 993.3  atol=0.1
+	@test ρ(50.0)  ≈ 988.0  atol=0.1
+	@test ρ(100.0) ≈ 958.4  atol=0.1
+	# unified temperature units
+	@test calc_density(Temperature(68.0, degF), P_ATM; out=kg_m3).value ≈ ρ(20.0) atol=1e-9
+	@test calc_density(Temperature(293.15, kelvin), P_ATM; out=kg_m3).value ≈ ρ(20.0) atol=1e-9
+	# unified pressure units
+	ρ_bar = calc_density(Temperature(20.0, degC), Pressure(100.0, bar); out=kg_m3).value
+	@test calc_density(Temperature(20.0, degC), Pressure(1450.3773773, psi); out=kg_m3).value ≈ ρ_bar atol=1e-6
+	@test calc_density(Temperature(20.0, degC), Pressure(1.0e7, pa); out=kg_m3).value ≈ ρ_bar atol=1e-9
+	# pressure correction: +0.45 % at 100 bar, +2.2 % at 500 bar
+	@test ρ_bar / ρ(20.0) ≈ 1.0045 atol=5e-4
+	@test calc_density(Temperature(20.0, degC), Pressure(500.0, bar); out=kg_m3).value / ρ(20.0) ≈ 1.022 atol=1e-3
+	# output units
+	d_sg = calc_density(Temperature(20.0, degC), P_ATM)
+	@test d_sg isa Density{SG}                                        # default out = sg
+	@test d_sg.value ≈ 0.9982 atol=1e-4
+	@test calc_density(Temperature(20.0, degC), P_ATM; out=ppg).value ≈ to_ppg(Density(ρ(20.0), kg_m3)).value atol=1e-9
+	@test calc_density(Temperature(20.0, degC), P_ATM; out=ppcf).value ≈ 62.32 atol=0.02
+	@test calc_density(Temperature(20.0, degC), P_ATM; out=kg_m3) isa Density{KG_M3}
+	# struct form
+	ws = WaterState(Temperature(20.0, degC), Pressure(100.0, bar))
+	@test ws.temp.value == 20.0
+	@test ws.pressure isa Pressure{BAR}
+	@test calc_density(ws; out=kg_m3).value ≈ ρ_bar atol=1e-12
+	# range constants exposed
+	@test WATER_T_MIN == Temperature(30.0, degF) || WATER_T_MIN.value == 30.0
+	@test WATER_T_MAX.value == 110.0
+	@test WATER_P_MIN === P_ATM
+	@test to_bar(WATER_P_MAX).value == 500.0
+	@test WATER_KAPPA_T ≈ 4.5e-10
+end
+
+@testset "Water density — Edge" begin
+	# just inside the temperature bounds (30 °F exclusive, 110 °C exclusive)
+	@test calc_density(Temperature(30.001, degF), P_ATM; out=kg_m3).value ≈ 999.75 atol=0.1
+	@test calc_density(Temperature(109.999, degC), P_ATM; out=kg_m3).value ≈ 950.95 atol=0.1
+	# bounds given in other units
+	@test WaterState(Temperature(-1.11, degC), P_ATM) isa WaterState
+	@test WaterState(Temperature(382.0, kelvin), P_ATM) isa WaterState          # 108.85 °C
+	# pressure bounds inclusive
+	@test WaterState(Temperature(20.0, degC), P_ATM) isa WaterState
+	@test WaterState(Temperature(20.0, degC), Pressure(500.0, bar)) isa WaterState
+	@test WaterState(Temperature(20.0, degC), to_psi(Pressure(500.0, bar))) isa WaterState
+	# monotonic: density falls with temperature above 4 °C and rises with pressure
+	Ts = 10.0:10.0:100.0
+	ρs = [calc_density(Temperature(T, degC), P_ATM; out=kg_m3).value for T in Ts]
+	@test all(diff(ρs) .< 0)
+	Ps = [1.1, 10.0, 100.0, 300.0, 500.0]
+	ρp = [calc_density(Temperature(20.0, degC), Pressure(P, bar); out=kg_m3).value for P in Ps]
+	@test all(diff(ρp) .> 0)
+	# at P_ATM the correction is exactly zero
+	@test calc_density(Temperature(20.0, degC), P_ATM; out=kg_m3).value ≈ calc_density(Temperature(20.0, degC), to_pa(P_ATM); out=kg_m3).value atol=1e-12
+	# show
+	@test occursin("°C", sprint(show, WaterState(Temperature(20.0, degC), P_ATM)))
+end
+
+@testset "Water density — Failure" begin
+	# temperature bounds are exclusive
+	@test_throws OutOfRangeError WaterState(Temperature(30.0, degF), P_ATM)
+	@test_throws OutOfRangeError WaterState(Temperature(110.0, degC), P_ATM)
+	@test_throws OutOfRangeError calc_density(Temperature(0.0, degF), P_ATM)
+	@test_throws OutOfRangeError calc_density(Temperature(120.0, degC), P_ATM)
+	@test_throws OutOfRangeError calc_density(Temperature(400.0, kelvin), P_ATM)   # 126.85 °C
+	# pressure bounds: absolute, 1 atm ≤ P ≤ 500 bar
+	@test_throws OutOfRangeError WaterState(Temperature(20.0, degC), Pressure(14.0, psi))
+	@test_throws OutOfRangeError WaterState(Temperature(20.0, degC), Pressure(0.0, bar))
+	@test_throws OutOfRangeError WaterState(Temperature(20.0, degC), Pressure(-1.0, bar))
+	@test_throws OutOfRangeError WaterState(Temperature(20.0, degC), Pressure(501.0, bar))
+	@test_throws OutOfRangeError calc_density(Temperature(20.0, degC), Pressure(60.0, mpa))
+	# error carries a message
+	@test occursin("OutOfRangeError", sprint(showerror, OutOfRangeError("x")))
+	# non-finite values are rejected upstream by the quantity constructors
+	@test_throws InvalidValueError calc_density(Temperature(NaN, degC), P_ATM)
+	@test_throws InvalidValueError calc_density(Temperature(20.0, degC), Pressure(Inf, bar))
+	# wrong types
+	@test_throws MethodError calc_density(20.0, P_ATM)
+	@test_throws MethodError calc_density(Temperature(20.0, degC), 14.7)
+	@test_throws MethodError WaterState(Temperature(20.0, degC))
+	@test_throws TypeError calc_density(Temperature(20.0, degC), P_ATM; out="sg")   # typed keyword
+end

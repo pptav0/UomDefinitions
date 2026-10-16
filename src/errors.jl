@@ -87,6 +87,19 @@ Base.showerror(io::IO, ::AngleValueError) =
     print(io, "AngleValueError: angle outside the valid range for this operation")
 
 
+"""
+    OutOfRangeError(what::String)
+
+Thrown when a quantity lies outside the validity range of a correlation or
+model (e.g. the temperature / pressure window of `WaterState`). Unlike the
+other error types it carries a message naming the quantity and the range.
+"""
+struct OutOfRangeError <: Exception
+    what::String
+end
+Base.showerror(io::IO, e::OutOfRangeError) =
+    print(io, "OutOfRangeError: ", e.what)
+
 # ------------------------------------------------------------------
 # Validation helpers
 # ------------------------------------------------------------------
