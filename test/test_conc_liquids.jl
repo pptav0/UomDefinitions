@@ -327,3 +327,46 @@ end
     @test_throws NegativeValueError LiquidConc(-1e6,  lhk)
     @test_throws NegativeValueError LiquidConc(-1e6,  l_mt)
 end
+
+# ===== Integration: Multi-Stage Round-Trip Chains (T-13.5) ====================================
+
+@testset "LiquidConc — Integration: shortest round-trip paths" begin
+    for v in [0.75, 5.0, 50.0, 100.0]
+        # GPS → FT3_SK → LHK → GPS (returns to start via 3 hops)
+        c = LiquidConc(v, gps)
+        @test to_gps(to_lhk(to_ft3sk(c))).value ≈ v atol=1e-9
+
+        # LHK → L_PER_MT → FT3_SK → LHK (alternative 3-hop loop)
+        l = LiquidConc(v, lhk)
+        @test to_lhk(to_ft3sk(to_lmt(l))).value ≈ v atol=1e-9
+
+        # FT3_SK → GPS → L_PER_MT → FT3_SK (hub-starts-at-FT3 variant)
+        f = LiquidConc(v, ft3_sk)
+        @test to_ft3sk(to_lmt(to_gps(f))).value ≈ v atol=1e-9
+    end
+end
+
+@testset "LiquidConc — Integration: long chain tolerance accumulation" begin
+    for v in [0.75, 5.0, 50.0, 100.0]
+        # Chain A: GPS → LHK → l_mt → ft3_sk → gps (5 hops, visits all 4 units)
+        c = LiquidConc(v, gps)
+        s1 = to_lhk(c);     s2 = to_lmt(s1);  s3 = to_ft3sk(s2)
+        @test to_gps(to_lmt(s3)).value ≈ v atol=1e-5
+
+        # Chain B: LMT → FT3_SK → GPS → LHK → L_PER_MT (starts from end unit)
+        m = LiquidConc(v, l_mt)
+        @test to_lmt(to_gps(to_ft3sk(to_lhk(to_lmt(m))))).value ≈ v atol=1e-5
+
+        # Chain C: FT3_SK → GPS → LTK → L_PER_MT → FT3_SK (alternate ordering)
+        f = LiquidConc(v, ft3_sk)
+        @test to_ft3sk(to_gps(to_lhk(to_lmt(f)))).value ≈ v atol=1e-5
+    end
+
+    # Extreme large scale via multi-hop: 5000 gal/sk (heavy chemical dose)
+    c_heavy = LiquidConc(5000.0, gps)
+    m_heavy = to_lmt(c_heavy)
+    f_heavy = to_ft3sk(m_heavy)
+
+    # Direct comparison: heavy-scale GPS → LMT ≈ long chain through all units
+    @test abs(to_lmt(c_heavy).value - c_heavy.value * L_PER_GAL / KG_PER_SK * KG_PER_MT) < 1.0
+end
