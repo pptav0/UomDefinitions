@@ -364,9 +364,6 @@ end
 
     # Extreme large scale via multi-hop: 5000 gal/sk (heavy chemical dose)
     c_heavy = LiquidConc(5000.0, gps)
-    m_heavy = to_lmt(c_heavy)
-    f_heavy = to_ft3sk(m_heavy)
-
     # Direct comparison: heavy-scale GPS → LMT ≈ long chain through all units
     @test abs(to_lmt(c_heavy).value - c_heavy.value * L_PER_GAL / KG_PER_SK * KG_PER_MT) < 1.0
 end
