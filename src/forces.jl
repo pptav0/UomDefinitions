@@ -1,4 +1,4 @@
-# ========= FORCE UNITS, Forces{Q} DECOMPOSITION & FORCE PRIMITIVES ===========
+# ========= FORCE UNITS, Components{Q} DECOMPOSITIONS & FORCE PRIMITIVES ==========
 # Force arises from exactly two products, implemented here once:
 #   pressure_force(ΔP, A) = ΔP · A      (psi·in² = lbf ; Pa·m² = N)
 #   weight_of(ρ, V) / weight_of(m) = m · GRAVITY   (lbm under g = lbf ; kg·g = N)
@@ -63,47 +63,96 @@ Base.show(io::IO, f::Force{N})   = print(io, "$(f.value) N")
 Base.show(io::IO, f::Force{LBF}) = print(io, "$(f.value) lbf")
 
 # ---------------------------------------------------------------------------
+# Decompositions. One struct, three producers, each stating its own frame:
+#   gravity_components()      global frame   x = 0,        y = g (vertical),  res = g
+#   path_components(Δmd, inc) global frame   x = horizontal offset, y = ΔTVD, res = Δmd
+#   load_components(F, inc)   hole frame     x = side load, y = axial load,   res = F (vertical)
+# Gravity is always vertical; inclination changes the path and the load split, never g.
 """
-    Forces{Q}(x, y, res)
+    Components{Q}(x, y, res)
 
-Generic decomposition at a calculation point: horizontal/normal `x`,
-vertical/axial `y`, resultant `res`, each a quantity `Q`
-(`Acceleration{…}` for gravity, `Force{…}` for an applied force).
+Generic 2D decomposition of a quantity ``Q``: ``x`` and ``y`` are the two
+orthogonal parts and ``res`` is the magnitude of the vector being decomposed,
+so ``hypot(x, y) ≈ res`` always holds. ``res`` is never one of the parts.
+
+The struct does not own a frame. The producing function defines what ``x`` and
+``y`` mean (see [`gravity_components`](@ref), [`path_components`](@ref),
+[`load_components`](@ref)). All three fields must share one concrete type ``Q``.
 """
-struct Forces{Q}
+struct Components{Q}
     x::Q
     y::Q
     res::Q
 end
 
-"""
-    gravity_forces(inc_deg; unit=ft_s2) -> Forces{Acceleration}
+# Backward-compatible alias — SimuHydraulics and prior code still compile:
+const Forces = Components
 
-Gravity at inclination `inc_deg`: `y = g·cos(inc)` (along-hole vertical
-contribution), `x = g·sin(inc)` (normal), `res = g`.
 """
-function gravity_forces(inc_deg::Real; unit::AccelerationUnit=ft_s2)
+    gravity_components(; unit=ft_s2) -> Components{Acceleration}
+
+Gravity in the global frame. Gravity is always vertical, so this takes no
+inclination:
+- ``x = 0``: horizontal component
+- ``y = g``: vertical component (the TVD direction)
+- ``res = g``: magnitude, equal to [`GRAVITY`](@ref) in `unit`
+
+For the vertical projection of a measured-depth step use [`path_components`](@ref);
+for how a vertical weight splits between hook and hole wall use [`load_components`](@ref).
+"""
+function gravity_components(; unit::AccelerationUnit=ft_s2)
     g = to_unit(GRAVITY, unit).value
-    return Forces(Acceleration(g * sind(inc_deg), unit),    # x
-                  Acceleration(g * cosd(inc_deg), unit),    # y
-                  Acceleration(g, unit))                    # res
+    return Components(Acceleration(0.0, unit),   # x — horizontal
+                      Acceleration(g, unit),     # y — vertical
+                      Acceleration(g, unit))     # res — gravity magnitude
 end
 
+"""
+    path_components(Δmd::Length, inc_deg) -> Components{Length}
+
+A measured-depth step resolved in the global frame, with inclination ``inc_deg``
+measured from vertical:
+- ``x = Δmd·sin(inc)``: horizontal offset
+- ``y = Δmd·cos(inc)``: vertical step, ``ΔTVD`` — the quantity hydrostatics integrate over
+- ``res = Δmd``: the step itself
+
+`Length` is non-negative, so only ``0° ≤ inc ≤ 90°`` is accepted; climbing
+sections would need a signed ``ΔTVD`` and are out of scope here.
+
+Throws `InvalidValueError` for a non-finite angle and `AngleValueError` outside ``[0°, 90°]``.
+"""
+function path_components(Δmd::Length{U}, inc_deg::Real) where {U}
+    isfinite(inc_deg)            || throw(InvalidValueError())
+    0.0 <= inc_deg <= 90.0       || throw(AngleValueError())
+
+    x = Length{U}(Δmd.value * sind(inc_deg))
+    y = Length{U}(Δmd.value * cosd(inc_deg))
+    Components(x, y, Δmd)
+end
 
 """
-    force_components(F::Force, inc_deg) -> Forces{Force}
+    load_components(F::Force, inc_deg) -> Components{Force}
 
-Decompose a vertical force at an inclined point: `y = F·cos(inc)` (axial),
-`x = F·sin(inc)` (normal), `res = F`. Same convention as `gravity_forces`.
+How a vertical force ``F`` (a weight) is carried in a hole at inclination
+``inc_deg`` measured from vertical — the hole frame:
+- ``y = F·cos(inc)``: axial load, along the hole, what a frictionless hook feels
+- ``x = F·sin(inc)``: side load, across the hole, carried by the hole wall
+- ``res = F``: the original vertical force; it never changes with inclination
+
+Vertical hole: ``y = F``, ``x = 0``. Horizontal hole: ``y = 0``, ``x = F``.
+Throws on a non-finite angle or ``|inc| > 360``. `force_components` is a deprecated alias.
 """
-function force_components(F::Force{U}, inc_deg::Real) where {U}
+function load_components(F::Force{U}, inc_deg::Real) where {U}
     isfinite(inc_deg)       || throw(InvalidValueError())
     abs(inc_deg) <= 360.0   || throw(AngleValueError())
 
     x = Force{U}(F.value * sind(inc_deg))
     y = Force{U}(F.value * cosd(inc_deg))
-    Forces(x, y, F)
+    Components(x, y, F)
 end
+
+"Deprecated name for [`load_components`](@ref)."
+const force_components = load_components
 
 
 """

@@ -42,14 +42,29 @@ end
     @test PA_PER_PSI * (MM_PER_IN / 1000)^2 ≈ N_PER_LBF rtol=1e-10
 end
 
-@testset "Forces{Q} and gravity_forces" begin
-    g = gravity_forces(60.0)
-    @test g isa Forces{Acceleration{FT_S2}}
-    @test g.res.value ≈ to_ft_s2(GRAVITY).value
-    @test g.y.value ≈ g.res.value * 0.5 atol=1e-12
-    @test g.x.value ≈ g.res.value * sqrt(3) / 2 atol=1e-12
-    gsi = gravity_forces(0.0; unit=m_s2)
-    @test gsi isa Forces{Acceleration{M_S2}} && gsi.y.value ≈ 9.80665
+@testset "Components{Q} alias and gravity_components (global frame)" begin
+    @test Forces === Components
+    g = gravity_components()
+    @test g isa Components{Acceleration{FT_S2}}
+    @test g.x.value == 0.0
+    @test g.y.value ≈ to_ft_s2(GRAVITY).value
+    @test g.res.value == g.y.value
+    gsi = gravity_components(; unit=m_s2)
+    @test gsi isa Components{Acceleration{M_S2}} && gsi.y.value ≈ 9.80665 && gsi.x.value == 0.0
+    # gravity is vertical: it has no inclination argument
+    @test_throws MethodError gravity_components(60.0)
+end
+
+@testset "path_components — MD step to ΔTVD and horizontal offset" begin
+    Δ = Length(100.0, ft)
+    p60 = path_components(Δ, 60.0)
+    @test p60 isa Components{Length{FT}}
+    @test p60.y.value ≈ 50.0 atol=1e-12                 # ΔTVD = Δmd·cos(60)
+    @test p60.x.value ≈ 100.0 * sqrt(3) / 2 atol=1e-12  # horizontal offset
+    @test p60.res.value == 100.0
+    @test hypot(p60.x.value, p60.y.value) ≈ p60.res.value atol=1e-12
+    pm = path_components(Length(30.0, m), 30.0)
+    @test pm isa Components{Length{M}} && pm.y.value ≈ 30.0 * cosd(30.0)
 end
 
 @testset "pressure_force — ΔP × A" begin
@@ -132,63 +147,71 @@ end
     @test F_pa.value > 0.0
 end
 
-@testset "Force-components decomposition — standard angles" begin
+@testset "load_components decomposition — standard angles" begin
     # inc=0°: y = F, x = 0 (vertical hook load)
-    d0 = force_components(Force(250.0, lbf), 0.0)
+    d0 = load_components(Force(250.0, lbf), 0.0)
     @test d0.y.value ≈ 250.0 atol=1e-12
     @test d0.x.value   == 0.0
 
     # inc=30°: y = F × cosd(30) = 0.866F, x = F × sind(30) = 0.5F
-    d30 = force_components(Force(200.0, lbf), 30.0)
+    d30 = load_components(Force(200.0, lbf), 30.0)
     @test isapprox(d30.y.value / 200.0, cosd(30.0); atol=1e-12)
     @test isapprox(d30.x.value / 200.0, sind(30.0);   atol=1e-12)
 
     # inc=45°: sin equals cos — boundary check
-    d45 = force_components(Force(100.0, newton), 45.0)
+    d45 = load_components(Force(100.0, newton), 45.0)
     @test isapprox(abs(d45.x.value), abs(d45.y.value); atol=1e-12)
 
     # inc=90°: y = 0, x = F (pure normal / shoulder)
-    d90 = force_components(Force(1.0, newton), 90.0)
+    d90 = load_components(Force(1.0, newton), 90.0)
     @test d90.x.value ≈ 1.0 atol=1e-12
     @test d90.y.value == 0.0
 
     # N unit at inc=60° (complement of existing lbf test)
-    dn = force_components(Force(5000.0, newton), 60.0)
+    dn = load_components(Force(5000.0, newton), 60.0)
     @test isapprox(dn.x.value / 5000.0, sind(60.0); atol=1e-12)
 end
 
 # ---------------------------------------------------------------------------
-@testset "Gravity force sweep — inclinations and unit variants" begin
-    g = to_unit(GRAVITY, ft_s2).value
+@testset "path_components sweep — inclinations, invariant and guards" begin
+    Δ = Length(1000.0, ft)
 
-    # inc=0°: y = g, x = 0 (pure vertical)
-    gf0 = gravity_forces(0.0; unit=ft_s2)
-    @test gf0.y.value ≈ g atol=1e-12
-    @test gf0.x.value == 0.0
+    # inc=0°: vertical hole, the whole step is TVD
+    p0 = path_components(Δ, 0.0)
+    @test p0.y.value == 1000.0
+    @test p0.x.value == 0.0
 
-    # inc=45°: x and y share √2/2
-    gf45 = gravity_forces(45.0; unit=ft_s2)
-    @test isapprox(gf45.y.value / g, cosd(45.0); atol=1e-12)
-    @test isapprox(gf45.x.value / g, sind(45.0); atol=1e-12)
+    # inc=45°: equal split
+    p45 = path_components(Δ, 45.0)
+    @test isapprox(p45.y.value / 1000.0, cosd(45.0); atol=1e-12)
+    @test isapprox(p45.x.value / 1000.0, sind(45.0); atol=1e-12)
 
-    # inc=90°: y = 0, x = g (pure normal)
-    gf90 = gravity_forces(90.0; unit=m_s2)
-    @test isapprox(gf90.x.value / GRAVITY.value, 1.0; atol=1e-12)
-    @test gf90.y.value == 0.0
+    # inc=90°: horizontal hole, no TVD gained
+    p90 = path_components(Δ, 90.0)
+    @test p90.y.value == 0.0
+    @test p90.x.value ≈ 1000.0 atol=1e-12
 
-    # m_s² variant at inc=60°
-    gm6 = gravity_forces(60.0; unit=m_s2)
-    @test isapprox(gm6.res.value / GRAVITY.value, 1.0; atol=1e-12)
+    # invariant at every angle: the parts recombine to the step
+    for inc in (0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0)
+        p = path_components(Δ, inc)
+        @test hypot(p.x.value, p.y.value) ≈ p.res.value atol=1e-9
+    end
+
+    # guards: non-finite angle, and anything outside [0°, 90°] (Length is non-negative)
+    @test_throws InvalidValueError path_components(Δ, NaN)
+    @test_throws AngleValueError  path_components(Δ, -1.0)
+    @test_throws AngleValueError  path_components(Δ, 90.0001)
+    @test_throws AngleValueError  path_components(Δ, 180.0)
 end
 
-@testset "Force-components — zero & large force edge cases" begin
+@testset "load_components — zero & large force edge cases" begin
     # Zero force through force_components: should not produce NaN
-    d0 = force_components(Force(0.0, lbf), 45.0)
+    d0 = load_components(Force(0.0, lbf), 45.0)
     @test isfinite(d0.x.value)
     @test iszero(d0.y.value)
 
     # Large force (1e8 lbf) through force_components at inc=60°
-    dL = force_components(Force(1.0e9, lbf), 60.0)   # ~1e^15 lbf y-component
+    dL = load_components(Force(1.0e9, lbf), 60.0)   # ~1e^15 lbf y-component
     @test isfinite(dL.y.value)
     @test isfinite(dL.x.value)
 end
@@ -232,30 +255,50 @@ end
     @test abs(Wc.value / 50000.0 - 1.0) < 1e-6
 end
 
-@testset "Force-components — N unit & force sign propagation" begin
+@testset "load_components — N unit & force sign propagation" begin
     # N unit at inc=45°: x ≈ y (both ~70.7%)
-    dn = force_components(Force(1000.0, newton), 45.0)
+    dn = load_components(Force(1000.0, newton), 45.0)
     @test isapprox(dn.y.value / 1000.0, cosd(45.0); atol=1e-12)
 
     # N unit at inc=60° (complement with lbf existing test)
-    dn6 = force_components(Force(100.0, newton), 60.0)
+    dn6 = load_components(Force(100.0, newton), 60.0)
     @test isapprox(dn6.res.value, 100.0; atol=1e-12)
 
     # Force sign propagation: negative force stays negative through decomposition
-    neg_f = force_components(Force(-100.0, lbf), 45.0)
+    neg_f = load_components(Force(-100.0, lbf), 45.0)
     @test neg_f.res.value < 0
     @test neg_f.y.value ≈ -70.71 atol=0.5
 end
 
+@testset "load_components — invariant hypot(x, y) ≈ |res| and deprecated alias" begin
+    W = Force(1234.5, lbf)
+    for inc in (0.0, 30.0, 45.0, 60.0, 90.0, 120.0, 180.0, 270.0, 360.0)
+        c = load_components(W, inc)
+        @test hypot(c.x.value, c.y.value) ≈ abs(c.res.value) atol=1e-9
+        @test c.res === W                       # the weight itself never changes
+    end
+    cn = load_components(Force(-100.0, lbf), 45.0)
+    @test hypot(cn.x.value, cn.y.value) ≈ 100.0 atol=1e-9
+
+    # a horizontal hole: the hook feels nothing, the wall carries the weight
+    ch = load_components(W, 90.0)
+    @test ch.y.value == 0.0
+    @test ch.x.value ≈ 1234.5 atol=1e-12
+
+    # force_components is the same function under its old name
+    @test force_components === load_components
+    @test force_components(W, 30.0).y.value ≈ load_components(W, 30.0).y.value
+end
+
 # ---------------------------------------------------------------------------
-@testset "Force-components — larger force magnitudes (lbf)" begin
+@testset "load_components — larger force magnitudes (lbf)" begin
     # 1,000 lbf at inc=60° (standard casing lift scenario)
-    dK = force_components(Force(1000.0, lbf), 60.0)
+    dK = load_components(Force(1000.0, lbf), 60.0)
     @test isapprox(dK.y.value / 1000.0, cosd(60.0); atol=1e-12)
     @test abs(dK.res.value - 1000.0) < 1e-3
 
     # 10,000 lbf at inc=45° (large cementing job load)
-    dL = force_components(Force(10000.0, lbf), 45.0)
+    dL = load_components(Force(10000.0, lbf), 45.0)
     @test isapprox(dL.y.value / 10000.0, cosd(45.0); atol=1e-8)
 end
 
@@ -353,24 +396,24 @@ end
 # ---------------------------------------------------------------------------
 @testset "force_components — NaN/Inf angle and force rejection" begin
     # NaN angle: sind/cosd(NaN) = NaN → Force constructor rejects NaN → throws
-    @test_throws InvalidValueError force_components(Force(100.0, lbf), NaN)
+    @test_throws InvalidValueError load_components(Force(100.0, lbf), NaN)
 
     # Inf force → InvalidValueError (Force constructor blocks it before decomposition)
-    @test_throws InvalidValueError force_components(Force(Inf, lbf), 30.0)
+    @test_throws InvalidValueError load_components(Force(Inf, lbf), 30.0)
 end
 
 # ---------------------------------------------------------------------------
 @testset "force_components — angle > 360° rejection (AngleValueError)" begin
     # Angle above 360: throws the newly introduced guard
-    @test_throws AngleValueError force_components(Force(100.0, lbf), 361.0)
+    @test_throws AngleValueError load_components(Force(100.0, lbf), 361.0)
 
     # Negative angle below -360: also rejected by abs(inclination) > 360
-    @test_throws AngleValueError force_components(Force(100.0, lbf), -400.0)
+    @test_throws AngleValueError load_components(Force(100.0, lbf), -400.0)
 
     # Boundary — exactly ±360° should pass (abs(360) == 360, not > 360)
-    c360 = force_components(Force(100.0, lbf), 360.0)
+    c360 = load_components(Force(100.0, lbf), 360.0)
     @test isfinite(c360.x.value) && isfinite(c360.y.value)
 
-    c_m360 = force_components(Force(100.0, lbf), -360.0)
+    c_m360 = load_components(Force(100.0, lbf), -360.0)
     @test isfinite(c_m360.x.value) && isfinite(c_m360.y.value)
 end
