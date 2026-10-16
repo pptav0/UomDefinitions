@@ -19,6 +19,7 @@ include("./conc_liquids.jl")
 include("./length.jl")
 include("./temperature.jl")
 include("./time.jl")
+include("./angle.jl")
 include("./density.jl")
 include("./capacity.jl")      # needs volume, pump_rates, length constants
 include("./area.jl")          # needs MM_PER_IN, M_PER_FT
@@ -96,6 +97,12 @@ export TimeUnit, Time
 export MIN, S, HR, mins, secs, hrs
 export to_min, to_s, to_hr
 export S_PER_MIN, MIN_PER_HR, S_PER_HR
+
+# - Angle
+export AngleUnit, Angle
+export DEG, RAD, deg, rad
+export to_deg, to_rad
+export RAD_PER_DEG, DEG_PER_RAD
 
 # - Density
 export DensityUnit, Density
