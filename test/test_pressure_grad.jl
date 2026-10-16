@@ -22,6 +22,9 @@ end
     @test PressureGradient(0.0, psi_ft).value == 0.0
     @test to_psi_ft(to_pa_m(to_bar_m(PressureGradient(0.4331, psi_ft)))).value ≈ 0.4331 rtol=1e-12   # fresh-water gradient round trip
     @test to_psi_ft(PressureGradient(1e-12, pa_m)).value > 0
+    @test PressureGradient(-0.01, psi_ft).value == -0.01                                     # signed gradients are physical
+    @test to_pa_m(PressureGradient(-1.0, psi_ft)).value ≈ -PA_M_PER_PSI_FT                   # sign survives conversion
+    @test to_psi_ft(to_kpa_m(PressureGradient(-0.4331, psi_ft))).value ≈ -0.4331 rtol=1e-12   # signed round trip
 end
 
 # =====================================================================
@@ -30,7 +33,7 @@ end
 @testset "PressureGradient — Failure Cases" begin
     for u in (psi_ft, bar_m, pa_m, kpa_m)
         @test_throws InvalidValueError PressureGradient(NaN, u)
-        @test_throws NegativeValueError PressureGradient(-0.01, u)
+        @test_throws InvalidValueError PressureGradient(-Inf, u)
     end
     @test_throws MethodError PressureGradient(0.052, psi)
     @test_throws MethodError to_psi_ft(Pressure(1.0, psi))

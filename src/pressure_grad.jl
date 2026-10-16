@@ -24,11 +24,12 @@ const kpa_m  = KPA_M()
 Typed quantity for pressure gradients (hydrostatic, friction). Units: `PSI_FT`,
 `BAR_M`, `PA_M`, `KPA_M` (singletons `psi_ft`, `bar_m`, `pa_m`, `kpa_m`).
 
-Non-negative: a friction or hydrostatic gradient never points backwards.
+Signed: a negative value is physical (pressure decreasing along the reference
+direction, e.g. friction opposing it). Callers that need a magnitude check the
+sign themselves.
 
 # Throws
 - `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
-- `NegativeValueError` if `value < 0`
 """
 struct PressureGradient{U<:PressureGradientUnit}
     value::Float64
@@ -72,7 +73,7 @@ _convert(g::PressureGradient{U}, ::Type{V}) where {U<:PressureGradientUnit, V<:P
 Convert a pressure gradient (or a number tagged with a unit singleton) to **psi/ft**.
 
 # Throws
-- `InvalidValueError` / `NegativeValueError` from the `PressureGradient`
+- `InvalidValueError` from the `PressureGradient`
   constructor (numeric form only; a constructed gradient is already valid).
 """
 to_psi_ft(g::PressureGradient) = _convert(g, PSI_FT)
@@ -84,7 +85,7 @@ to_psi_ft(g::PressureGradient) = _convert(g, PSI_FT)
 Convert a pressure gradient (or a number tagged with a unit singleton) to **bar/m**.
 
 # Throws
-- `InvalidValueError` / `NegativeValueError` from the constructor (numeric form only).
+- `InvalidValueError` from the constructor (numeric form only).
 """
 to_bar_m(g::PressureGradient) = _convert(g, BAR_M)
 
@@ -95,7 +96,7 @@ to_bar_m(g::PressureGradient) = _convert(g, BAR_M)
 Convert a pressure gradient (or a number tagged with a unit singleton) to **Pa/m**.
 
 # Throws
-- `InvalidValueError` / `NegativeValueError` from the constructor (numeric form only).
+- `InvalidValueError` from the constructor (numeric form only).
 """
 to_pa_m(g::PressureGradient) = _convert(g, PA_M)
 
@@ -106,7 +107,7 @@ to_pa_m(g::PressureGradient) = _convert(g, PA_M)
 Convert a pressure gradient (or a number tagged with a unit singleton) to **kPa/m**.
 
 # Throws
-- `InvalidValueError` / `NegativeValueError` from the constructor (numeric form only).
+- `InvalidValueError` from the constructor (numeric form only).
 """
 to_kpa_m(g::PressureGradient) = _convert(g, KPA_M)
 
