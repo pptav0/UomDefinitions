@@ -9,6 +9,7 @@ abstract type Uom end
 "Convert a quantity to the unit given as a singleton; one method set per family."
 function to_unit end
 
+include("./errors.jl")      # error handling
 include("./diameters.jl")
 include("./pressure.jl")
 include("./pump_rates.jl")
@@ -18,11 +19,16 @@ include("./conc_liquids.jl")
 include("./length.jl")
 include("./temperature.jl")
 include("./density.jl")
-include("./capacity.jl")   # needs volume, pump_rates, length constants
+include("./capacity.jl")      # needs volume, pump_rates, length constants
 include("./area.jl")          # needs MM_PER_IN, M_PER_FT
 include("./mass.jl")          # needs KG_PER_LB, LB_PER_KG
 include("./acceleration.jl")  # needs M_PER_FT; defines GRAVITY
 include("./forces.jl")        # needs Pressure, Area, Density, Volume, Mass, Acceleration
+
+
+# Error types for diameter validation (Phase 1 Task 1.0)
+export NegativeValueError, ZeroValueError, InvalidValueError
+export ZeroCapacityError, BelowAbsoluteZeroError, AngleValueError
 
 # re-export everything you want public
 export Uom
@@ -31,13 +37,12 @@ export Uom
 export DiameterUnit, Diameter
 export IN, MM, D64, inch, mm, d64
 export to_in, to_mm, to_d64
-export MM_PER_IN, IN_PER_MM, D64_PER_IN
+export MM_PER_IN, CM_PER_IN, M_PER_IN, IN_PER_MM, D64_PER_IN
 
 # - Pump rates
 export PumpRateUnit, PumpRate
 export BPM, LPM, GPM, bpm, lpm, gpm
 export to_bpm, to_lpm, to_gpm
-export L_PER_BBL, L_PER_GAL, GAL_PER_BBL
 
 # - Presuure
 export PressureUnit, Pressure
@@ -48,10 +53,12 @@ export P_ATM
 
 # - Volume
 export VolumeUnit, Volume
-export M3, BBL, L, SCF, STK, m3, bbl, ltr, scf, stk
-export to_m3, to_bbl, to_ltr
+export L, M3, FT3, GAL, BBL,SCF, STK
+export ltr, m3, ft3, gal, bbl,  scf, stk
+export to_ltr, to_m3, to_ft3, to_gal, to_bbl, to_ltr
 export to_unit
-export FT3_PER_M3, M3_PER_FT3, L_PER_M3
+export L_PER_M3, L_PER_FT3, FT3_PER_M3, M3_PER_FT3
+export L_PER_BBL, L_PER_GAL, GAL_PER_BBL, M3_PER_BBL
 
 # - Stroke capacity (pairs with Volume{STK})
 export StrokeCapacityUnit, StrokeCapacity
@@ -102,6 +109,6 @@ export MassUnit, Mass, KG, LBM, kg, lbm, to_kg, to_lbm
 export AccelerationUnit, Acceleration, M_S2, FT_S2, m_s2, ft_s2, to_m_s2, to_ft_s2, GRAVITY
 # - Force, decomposition and primitives
 export ForceUnit, Force, N, LBF, newton, lbf, to_n, to_lbf, N_PER_LBF, LBF_PER_N
-export Forces, gravity_forces, pressure_force, weight_of, along_hole
+export Forces, gravity_forces, pressure_force, weight_of, force_components
 
 end # module UomDefinitions

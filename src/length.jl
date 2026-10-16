@@ -4,7 +4,7 @@ abstract type LengthUnit <: Uom end
 "foot"
 struct FT <: LengthUnit end
 "meter"
-struct M  <: LengthUnit end
+struct M   <: LengthUnit end
 
 # handy singletons
 const ft = FT()
@@ -17,11 +17,17 @@ Typed quantity for lengths / depths (TVD, MD). Use `FT` or `M`.
 """
 mutable struct Length{U<:LengthUnit}
     value::Float64
+
+    function Length{U}(value::Real) where {U<:LengthUnit}
+        isfinite(value) || throw(InvalidValueError())
+        value < 0 && throw(NegativeValueError())
+
+        new{U}(float(value))
+    end
 end
 
-# ergonomic constructors
-Length(v::Real, ::FT) = Length{FT}(float(v))
-Length(v::Real, ::M)  = Length{M}(float(v))
+# Ergonomic helpers delegate to the guarded inner constructor above.
+Length(v::Real, ::U) where {U<:LengthUnit} = Length{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
 const M_PER_FT = 0.3048
@@ -45,7 +51,7 @@ to_ft(l::Length{M})  = Length{FT}(l.value * FT_PER_M)
 
 Convert a `Length{FT|M}` to **meters**.
 """
-to_m(l::Length{M})  = l
+to_m(l::Length{M})   = l
 to_m(l::Length{FT}) = Length{M}(l.value * M_PER_FT)
 
 # Convenience numeric + unit singletons
@@ -66,8 +72,8 @@ to_m(v::Real, ::FT)  = Length{M}(float(v) * M_PER_FT)
 
 Convert a `Diameter{IN|MM|D64}` to a `Length{FT}` (e.g. for area calculations).
 """
-to_ft(d::Diameter{IN})  = Length{FT}(d.value / IN_PER_FT)
-to_ft(d::Diameter{MM})  = Length{FT}(d.value / MM_PER_FT)
+to_ft(d::Diameter{IN})   = Length{FT}(d.value / IN_PER_FT)
+to_ft(d::Diameter{MM})   = Length{FT}(d.value / MM_PER_FT)
 to_ft(d::Diameter{D64}) = to_ft(to_in(d))
 
 """

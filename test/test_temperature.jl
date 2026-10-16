@@ -40,3 +40,156 @@ end
     @test to_degF(to_kelvin(t)).value ≈ t.value atol=1e-9
     @test to_degF(t) === t
 end
+
+# ------------------------------------------------------------------
+# BelowAbsoluteZeroError – type existence tests
+# ------------------------------------------------------------------
+@testset "BelowAbsoluteZeroError – type & message" begin
+     @test isa(BelowAbsoluteZeroError(), Exception)
+     @test !isempty(sprint(showerror, BelowAbsoluteZeroError()))
+end
+
+# ==================================================================
+# T-5.3  Normal Cases — standard values & round-trips (~14 assertions)
+# ==================================================================
+@testset "Temperature — normal cases" begin
+     # Standard positive temperatures construct cleanly
+      @test Temperature(25.0, degC).value        == 25.0
+      @test Temperature(68.0, degF).value        == 68.0
+      @test Temperature(298.15, kelvin).value    == 298.15
+
+     # Round-trip: °C → °F → K → °C restores value for several points
+      t = Temperature(-40.0, degC);   @test to_degC(to_degF(to_kelvin(t))).value ≈ -40.0 atol=1e-9
+      t = Temperature(  0.0, degC);   @test to_degC(to_degF(to_kelvin(t))).value ≈   0.0 atol=1e-9
+      t = Temperature(100.0, degC);   @test to_degC(to_degF(to_kelvin(t))).value ≈ 100.0 atol=1e-9
+
+     # Round-trip: °F → K → °C → °F restores across a warm and cold point
+      t = Temperature( 32.0, degF);   @test to_degF(to_kelvin(to_degC(t))).value ≈  32.0 atol=1e-9
+      t = Temperature(-40.0, degF);   @test to_degF(to_kelvin(to_degC(t))).value ≈ -40.0 atol=1e-9
+
+     # Rankine boundary correctness
+      @test to_rankine(Temperature(273.15, kelvin))  ≈ 491.67 atol=1e-9
+      @test to_rankine(Temperature(373.15, kelvin))  ≈ 671.67 atol=1e-9
+
+     # Numeric+unit helpers (to_xxx(v, unit)) dispatch correctly
+      @test to_degF(-40.0, degC).value              ≈ -40.0 atol=1e-9
+      @test to_kelvin( 32.0, degF).value            ≈ 273.15 atol=1e-9
+end
+
+# ====================================================================
+# T-5.4  Edge Cases — boundaries & extreme values (~12 assertions)
+# ====================================================================
+@testset "Temperature — edge cases" begin
+     # Exact water phase-change points (already partially tested, restate as edges)
+      @test to_degC(Temperature(32.0, degF)).value   ≈  0.0 atol=1e-9
+      @test to_degC(Temperature(212.0, degF)).value  ≈ 100.0 atol=1e-9
+      @test to_degF(Temperature(  0.0, degC)).value  ≈  32.0 atol=1e-9
+      @test to_degF(Temperature(100.0, degC)).value  ≈ 212.0 atol=1e-9
+
+     # Near-absolute-zero kelvin constructs without error (extremely cold is still valid)
+      @test Temperature(0.001, kelvin).value == 0.001
+
+     # Large positive temperatures are allowed
+      @test Temperature(5000.0, degF).value == 5000.0
+      @test Temperature(3000.0, kelvin).value == 3000.0
+
+     # Just-above-absolute-zero in °C and °F constructs without error
+      t_c = Temperature(-273.14, degC);   @test t_c.value == -273.14
+      t_f = Temperature(-459.66, degF);   @test t_f.value == -459.66
+
+     # The −40 crossover (already in fixed points; restate as explicit edge)
+      @test to_degF(Temperature(-40.0, degC)).value ≈ -40.0 atol=1e-9
+      @test to_degC(Temperature(-40.0, degF)).value ≈ -40.0 atol=1e-9
+
+     # Zero kelvin boundary — constructs without error (≤ is allowed per < convention)
+      @test Temperature(0.0, kelvin).value == 0.0
+end
+
+# ========================================================================
+# T-5.5  Failure Cases — below abs zero + non-finite (~14+ assertions)
+# ========================================================================
+@testset "Temperature — failure cases" begin
+     # -- kelvin --
+      @test_throws BelowAbsoluteZeroError Temperature(-1.0,   kelvin)  # clearly below 0
+      @test_throws BelowAbsoluteZeroError Temperature(-0.001, kelvin)  # fractionally below 0
+
+     # -- Celsius at/at-below absolute zero --
+      @test_throws BelowAbsoluteZeroError Temperature(-273.16, degC)       # exactly -273.15 °C = 0 K
+      @test_throws BelowAbsoluteZeroError Temperature(-300.0,  degC)       # below abs zero
+
+     # -- Fahrenheit at/at-below absolute zero --
+      @test_throws BelowAbsoluteZeroError Temperature(-459.68, degF)        # exactly −459.67 °F = 0 R ≈ 0 K
+      @test_throws BelowAbsoluteZeroError Temperature(-500.0,  degF)        # below abs zero
+
+     # -- NaN across all units → InvalidValueError --
+      @test_throws InvalidValueError          Temperature(NaN,   kelvin)
+      @test_throws InvalidValueError          Temperature(NaN,   degC)
+      @test_throws InvalidValueError          Temperature(NaN,   degF)
+
+     # -- +Inf / −Inf across all units → InvalidValueError --
+      @test_throws InvalidValueError          Temperature( Inf,  kelvin)
+      @test_throws InvalidValueError          Temperature(-Inf,  kelvin)
+      @test_throws InvalidValueError          Temperature( Inf,  degC)
+      @test_throws InvalidValueError          Temperature(-Inf,  degC)
+      @test_throws InvalidValueError          Temperature( Inf,  degF)
+      @test_throws InvalidValueError          Temperature(-Inf,  degF)
+end
+
+# ===========================================================================
+# T-5.6  Round-Trip Integration — Multi-Stage Chains (~8 assertions)
+# ================================================================================
+@testset "Temperature — round-trip integration" begin
+    # Chain 1: °F → °C → K → °F (3-stage, standard values)
+    for v in [32.0, 212.0, -40.0, 98.6]
+        t = Temperature(v, degF)
+        @test to_degF(to_degC(to_kelvin(t))).value ≈ v atol=1e-9
+    end
+
+    # Chain 2: K → °F → °C → K (different order, tests non-exact commutativity bound)
+    for v in [0.0, 273.15, 373.15]
+        t = Temperature(v, kelvin)
+        @test to_kelvin(to_degF(to_degC(t))).value ≈ v atol=1e-9
+    end
+
+    # Chain 3: crossover path — °C → K → °F → °C passes through −40 point
+    for v in [-273.14, -40.0, 100.0]
+        t = Temperature(v, degC)
+        @test to_degC(to_kelvin(to_degF(t))).value ≈ v atol=1e-9
+    end
+
+    # Long chain (6+ stages): degenerates through °F↔K↔°C↔K repeating
+    t = Temperature(500.0, degF)
+    @test to_degF(to_kelvin(to_degC(to_kelvin(to_degF(to_degC(t)))))).value ≈ 500.0 atol=1e-8
+end
+
+# ================================================================================
+# T-5.7  Rankine Edge Cases — derived-only Float64 (~7 assertions)
+# ================================================================================
+@testset "Temperature — rankine edges" begin
+    # At absolute zero: to_rankine of 0 K == 0°R (no struct, just bare Float64)
+    @test to_rankine(Temperature(0.0, kelvin))     ≈ 0.0 atol=1e-9
+
+    # Near-abs-zero Kelvin → near-zero Rankine (within float tolerance)
+    @test to_rankine(Temperature(0.001, kelvin))   ≈ 0.0018 atol=1e-4
+
+    # Below-absolute-zero is already caught by the constructor — this validates no sneaky NaN propagates
+    # through conversions when passing a Temperature that was constructed at exactly 0 K
+    @test !isnan(to_rankine(Temperature(0.0, kelvin)))
+    @test !isinf(to_rankine(Temperature(0.0, kelvin)))
+
+    # Cross-validate: to_kelvin to_rankine == degF to_rankine for same physical temperature
+    t_k  = Temperature(273.15, kelvin)
+    t_f  = to_degF(t_k)
+    @test to_rankine(t_f) ≈ to_rankine(t_k) atol=1e-9
+
+    # Edge: very large Kelvin → large Rankine (no overflow in Float64 range we care about)
+    @test isfinite(to_rankine(Temperature(10000.0, kelvin)))
+
+    # Verify conversion identity paths do not silently produce NaN (sanity check on each source unit)
+    for u ∈ [kelvin, degC, degF]
+        t = Temperature(100.0, u)
+        @test !isnan(to_rankine(t))
+    end
+end
+
+# ================================================================================

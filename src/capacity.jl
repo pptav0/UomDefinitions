@@ -31,14 +31,17 @@ foot / meter). Units: `BBL_PER_FT`, `GAL_PER_FT`, `FT3_PER_FT`, `M3_PER_M`, `L_P
 """
 mutable struct Capacity{U<:CapacityUnit}
     value::Float64
+
+    function Capacity{U}(v::Real) where {U<:CapacityUnit}
+        isfinite(v) || throw(InvalidValueError())
+        iszero(v)   && throw(ZeroCapacityError())
+        v < 0 && throw(NegativeValueError())
+        new{U}(float(v))
+    end
 end
 
-# ergonomic constructors
-Capacity(v::Real, ::BBL_PER_FT) = Capacity{BBL_PER_FT}(float(v))
-Capacity(v::Real, ::GAL_PER_FT) = Capacity{GAL_PER_FT}(float(v))
-Capacity(v::Real, ::M3_PER_M)   = Capacity{M3_PER_M}(float(v))
-Capacity(v::Real, ::L_PER_M)    = Capacity{L_PER_M}(float(v))
-Capacity(v::Real, ::FT3_PER_FT) = Capacity{FT3_PER_FT}(float(v))
+# ergonomic constructors (outer — delegate to inner above)
+Capacity(v::Real, ::U) where {U<:CapacityUnit} = Capacity{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
 "1 bbl/ft expressed in m³/m — derived: FT3_PER_BBL * M3_PER_FT3 / M_PER_FT ≈ 0.5217"
@@ -46,7 +49,7 @@ const M3_M_PER_BBL_FT = FT3_PER_BBL * M3_PER_FT3 / M_PER_FT
 "1 m³/m expressed in bbl/ft"
 const BBL_FT_PER_M3_M = 1 / M3_M_PER_BBL_FT
 "1 ft³/ft expressed in m³/m — derived: M3_PER_FT3 / M_PER_FT = M_PER_FT² ≈ 0.0929"
-const M3_M_PER_FT3_FT = M3_PER_FT3 / M_PER_FT
+const M3_M_PER_FT3_FT = M_PER_FT^2
 "1 m³/m expressed in ft³/ft"
 const FT3_FT_PER_M3_M = 1 / M3_M_PER_FT3_FT
 

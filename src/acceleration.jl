@@ -18,10 +18,14 @@ Typed acceleration (also force per unit mass). Units: `M_S2`, `FT_S2`.
 """
 mutable struct Acceleration{U<:AccelerationUnit}
     value::Float64
+
+    function Acceleration{U}(value::Real) where {U<:AccelerationUnit}
+        isfinite(value) || throw(InvalidValueError())
+        new{U}(value)  # negative values now allowed (opposite direction forces)
+    end
 end
 
-Acceleration(v::Real, ::M_S2)  = Acceleration{M_S2}(float(v))
-Acceleration(v::Real, ::FT_S2) = Acceleration{FT_S2}(float(v))
+Acceleration(v::Real, ::U) where {U<:AccelerationUnit} = Acceleration{U}(Float64(v))
 
 "Convert to m/s²"
 to_m_s2(a::Acceleration{M_S2})  = a

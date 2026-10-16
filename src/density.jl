@@ -14,27 +14,33 @@ const kg_m3 = KG_M3()
 const sg    = SG()
 
 """
-    Density{U<:DensityUnit}(value)
+    Density{U<:DensityUnit}(value::Real)
 
 Typed quantity for fluid / slurry densities. Units: `PPG`, `KG_M3`, `SG`.
+Note: Density values must be finite and non-negative (physical densities).
 
-The `SG` reference is **1000 kg/m³** (industry convention), so `SG * 8.3454
-≈ ppg` and `SG * 1000 = kg/m³` by construction.
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`\
+- `NegativeValueError` if `value < 0` (negative density is impossible)
 """
 mutable struct Density{U<:DensityUnit}
     value::Float64
+
+    function Density{U}(value::Real) where {U<:DensityUnit}
+        isfinite(value) || throw(InvalidValueError())
+        value >= 0.0    || throw(NegativeValueError())
+        new{U}(value)
+    end
 end
 
-# ergonomic constructors
-Density(v::Real, ::PPG)   = Density{PPG}(float(v))
-Density(v::Real, ::KG_M3) = Density{KG_M3}(float(v))
-Density(v::Real, ::SG)    = Density{SG}(float(v))
+# Constructor dispatch per unit type (STK requires integer rounding)
+Density(v::Real, ::U) where {U<:DensityUnit} = Density{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
-"1 ppg expressed in kg/m³ — derived: KG_PER_LB * L_PER_M3 / L_PER_GAL ≈ 119.826427"
-const KG_M3_PER_PPG = KG_PER_LB * L_PER_M3 / L_PER_GAL
 "SG reference density (industry convention, not physical water mass)"
 const KG_M3_PER_SG  = 1000.0
+"1 ppg expressed in kg/m³ — derived: KG_PER_LB * L_PER_M3 / L_PER_GAL ≈ 119.826427"
+const KG_M3_PER_PPG = KG_PER_LB * L_PER_M3 / L_PER_GAL
 "1 SG expressed in ppg — derived: KG_M3_PER_SG / KG_M3_PER_PPG ≈ 8.345404"
 const PPG_PER_SG    = KG_M3_PER_SG / KG_M3_PER_PPG
 
@@ -44,9 +50,9 @@ const PPG_PER_SG    = KG_M3_PER_SG / KG_M3_PER_PPG
 
 Convert a `Density{PPG|KG_M3|SG}` to **pounds per US gallon**.
 """
-to_ppg(d::Density{PPG})   = d
-to_ppg(d::Density{KG_M3}) = Density{PPG}(d.value / KG_M3_PER_PPG)
-to_ppg(d::Density{SG})    = Density{PPG}(d.value * PPG_PER_SG)
+to_ppg(d::Density{PPG})     = d
+to_ppg(d::Density{KG_M3})   = Density{PPG}(d.value / KG_M3_PER_PPG)
+to_ppg(d::Density{SG})      = Density{PPG}(d.value * PPG_PER_SG)
 
 """
     to_kg_m3(d::Density) -> Density{KG_M3}
@@ -62,22 +68,22 @@ to_kg_m3(d::Density{SG})    = Density{KG_M3}(d.value * KG_M3_PER_SG)
 
 Convert a `Density{PPG|KG_M3|SG}` to **specific gravity** (ref 1000 kg/m³).
 """
-to_sg(d::Density{SG})    = d
-to_sg(d::Density{KG_M3}) = Density{SG}(d.value / KG_M3_PER_SG)
-to_sg(d::Density{PPG})   = Density{SG}(d.value / PPG_PER_SG)
+to_sg(d::Density{SG})       = d
+to_sg(d::Density{KG_M3})    = Density{SG}(d.value / KG_M3_PER_SG)
+to_sg(d::Density{PPG})      = Density{SG}(d.value / PPG_PER_SG)
 
 # Convenience numeric + unit singletons
-to_ppg(v::Real, ::PPG)   = Density(v, ppg)
-to_ppg(v::Real, ::KG_M3) = to_ppg(Density(v, kg_m3))
-to_ppg(v::Real, ::SG)    = to_ppg(Density(v, sg))
+to_ppg(v::Real, ::PPG)      = Density(v, ppg)
+to_ppg(v::Real, ::KG_M3)    = to_ppg(Density(v, kg_m3))
+to_ppg(v::Real, ::SG)       = to_ppg(Density(v, sg))
 
-to_kg_m3(v::Real, ::KG_M3) = Density(v, kg_m3)
-to_kg_m3(v::Real, ::PPG)   = to_kg_m3(Density(v, ppg))
-to_kg_m3(v::Real, ::SG)    = to_kg_m3(Density(v, sg))
+to_kg_m3(v::Real, ::KG_M3)  = Density(v, kg_m3)
+to_kg_m3(v::Real, ::PPG)    = to_kg_m3(Density(v, ppg))
+to_kg_m3(v::Real, ::SG)     = to_kg_m3(Density(v, sg))
 
-to_sg(v::Real, ::SG)    = Density(v, sg)
-to_sg(v::Real, ::PPG)   = to_sg(Density(v, ppg))
-to_sg(v::Real, ::KG_M3) = to_sg(Density(v, kg_m3))
+to_sg(v::Real, ::SG)        = Density(v, sg)
+to_sg(v::Real, ::PPG)       = to_sg(Density(v, ppg))
+to_sg(v::Real, ::KG_M3)     = to_sg(Density(v, kg_m3))
 
 # ========= PRETTY PRINTING ===================================================
 Base.show(io::IO, d::Density{PPG})   = print(io, "$(d.value) ppg")

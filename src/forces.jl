@@ -21,14 +21,30 @@ const LBF_PER_N = 1 / N_PER_LBF
 """
     Force{U<:ForceUnit}(value)
 
-Typed force. Units: `N`, `LBF`.
+Typed force. Units: ``N``, ``LBF``.
+
+Force represents a directional physical interaction — thrust, tension, hook load, or
+pressure-induced product. Sign indicates direction relative to primary applied force:
+ positive = applied/injection direction; zero = no load (degenerate);
+negative = opposing/gravity pullback (physically valid).
+
+Note: Large pressure-area products can overflow Float64. Downstream consumers should check
+result finiteness before using hook loads or ECD calculations.
+
+Throws:
+- ``InvalidValueError`` if ``value`` is ``NaN``, ``Inf``, or ``-Inf``
+  (negative values are physically valid for opposite-direction forces)
 """
 mutable struct Force{U<:ForceUnit}
     value::Float64
+
+    function Force{U}(value::Real) where {U<:ForceUnit}
+        isfinite(value) || throw(InvalidValueError())
+        new{U}(value)  # negative values now allowed (opposite direction forces)
+    end
 end
 
-Force(v::Real, ::N)   = Force{N}(float(v))
-Force(v::Real, ::LBF) = Force{LBF}(float(v))
+Force(v::Real, ::U) where {U<:ForceUnit} = Force{U}(Float64(v))
 
 "Convert to newtons"
 to_n(f::Force{N})   = f
@@ -68,18 +84,38 @@ contribution), `x = g·sin(inc)` (normal), `res = g`.
 """
 function gravity_forces(inc_deg::Real; unit::AccelerationUnit=ft_s2)
     g = to_unit(GRAVITY, unit).value
-    return Forces(Acceleration(g * sind(inc_deg), unit),
-                  Acceleration(g * cosd(inc_deg), unit),
-                  Acceleration(g, unit))
+    return Forces(Acceleration(g * sind(inc_deg), unit),    # x
+                  Acceleration(g * cosd(inc_deg), unit),    # y
+                  Acceleration(g, unit))                    # res
 end
+
+
+"""
+    force_components(F::Force, inc_deg) -> Forces{Force}
+
+Decompose a vertical force at an inclined point: `y = F·cos(inc)` (axial),
+`x = F·sin(inc)` (normal), `res = F`. Same convention as `gravity_forces`.
+"""
+function force_components(F::Force{U}, inc_deg::Real) where {U}
+    isfinite(inc_deg)       || throw(InvalidValueError())
+    abs(inc_deg) <= 360.0   || throw(AngleValueError())
+
+    x = Force{U}(F.value * sind(inc_deg))
+    y = Force{U}(F.value * cosd(inc_deg))
+    Forces(x, y, F)
+end
+
 
 """
     pressure_force(ΔP::Pressure, A::Area; out=newton) -> Force
 
 Force of a (differential) pressure acting on an area: `ΔP · A`.
 """
-pressure_force(ΔP::Pressure, A::Area; out::ForceUnit=newton) =
-    to_unit(Force(to_pa(ΔP).value * to_m2(A).value, newton), out)
+function pressure_force(ΔP::Pressure, A::Area; out::ForceUnit=newton)
+    pressure = to_pa(ΔP).value
+    area     = to_m2(A).value
+    to_unit(Force(pressure * area, newton), out)
+end
 
 """
     weight_of(ρ::Density, V::Volume; out=newton) -> Force
@@ -87,16 +123,11 @@ pressure_force(ΔP::Pressure, A::Area; out::ForceUnit=newton) =
 
 Weight under standard gravity: `ρ · V · g` or `m · g`.
 """
-weight_of(m::Mass; out::ForceUnit=newton) =
-    to_unit(Force(to_kg(m).value * GRAVITY.value, newton), out)
-weight_of(ρ::Density, V::Volume; out::ForceUnit=newton) =
-    weight_of(Mass(to_kg_m3(ρ).value * to_m3(V; digits=12).value, kg); out=out)
-
-"""
-    along_hole(F::Force, inc_deg) -> Forces{Force}
-
-Decompose a vertical force at an inclined point: `y = F·cos(inc)` (axial),
-`x = F·sin(inc)` (normal), `res = F`. Same convention as `gravity_forces`.
-"""
-along_hole(F::Force{U}, inc_deg::Real) where {U} =
-    Forces(Force{U}(F.value * sind(inc_deg)), Force{U}(F.value * cosd(inc_deg)), F)
+function weight_of(m::Mass; out::ForceUnit=newton)
+    value = to_kg(m).value * GRAVITY.value
+    to_unit(Force(value, newton), out)
+end
+function weight_of(ρ::Density, V::Volume; out::ForceUnit=newton)
+    value = to_kg_m3(ρ).value * to_m3(V).value
+    weight_of(Mass(value, kg); out=out)
+end
