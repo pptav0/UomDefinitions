@@ -28,7 +28,7 @@ include("./forces.jl")        # needs Pressure, Area, Density, Volume, Mass, Acc
 
 # Error types for diameter validation (Phase 1 Task 1.0)
 export NegativeValueError, ZeroValueError, InvalidValueError
-export ZeroCapacityError, BelowAbsoluteZeroError, AngleValueError
+export ZeroCapacityError, BelowAbsoluteZeroError, AngleValueError, OutOfRangeError
 export validate_positive_value
 
 # re-export everything you want public
@@ -95,6 +95,9 @@ export DensityUnit, Density
 export PPG, KG_M3, SG, PPCF, ppg, kg_m3, sg, ppcf
 export to_ppg, to_kg_m3, to_sg, to_ppcf
 export KG_M3_PER_PPG, KG_M3_PER_SG, PPG_PER_SG, KG_M3_PER_PPCF, PPCF_PER_PPG, PPCF_PER_SG
+# - Water density vs temperature & pressure
+export WaterState, calc_density
+export WATER_T_MIN, WATER_T_MAX, WATER_P_MIN, WATER_P_MAX, WATER_KAPPA_T
 
 # - Capacity (volume per unit length)
 export CapacityUnit, Capacity

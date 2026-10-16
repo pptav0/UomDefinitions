@@ -126,3 +126,98 @@ to_unit(d::Density, ::SG)    = to_sg(d)
 to_unit(d::Density, ::KG_M3) = to_kg_m3(d)
 to_unit(d::Density, ::PPG)   = to_ppg(d)
 to_unit(d::Density, ::PPCF)  = to_ppcf(d)
+
+# ========= WATER DENSITY vs TEMPERATURE & PRESSURE ===========================
+# Model (see vault clipping "Water Density vs Temperature – Table & Calculator",
+# IAPWS-95 data): density of liquid water at 1 atm from the Kell 5th-order
+# rational polynomial (±0.01 kg/m³, nominal 0–150 °C), corrected for pressure
+# with a constant isothermal compressibility Δρ/ρ = κ_T·(P − P_atm).
+#
+# Assumptions (documented, not checked):
+#   * `pressure` is ABSOLUTE.
+#   * Sub-cooled liquid water: no saturation check, so results between 100 and
+#     110 °C are meaningful only when P exceeds the vapour pressure (≈1.43 bar at
+#     110 °C).
+#   * Constant κ_T (20 °C value): accuracy ≈ ±0.2 % below 100 bar, degrading
+#     towards 500 bar (+2.2 % total correction). Above 500 bar use IAPWS-95.
+#   * 30 °F to 0 °C is a slight extrapolation of the polynomial (supercooled).
+#   * SG reference is 1000 kg/m³ (package convention `KG_M3_PER_SG`).
+
+"lower temperature bound (exclusive) of the water-density model"
+const WATER_T_MIN   = Temperature(30.0, degF)
+"upper temperature bound (exclusive) of the water-density model"
+const WATER_T_MAX   = Temperature(110.0, degC)
+"lower absolute-pressure bound (inclusive) of the water-density model — 1 atm"
+const WATER_P_MIN   = P_ATM
+"upper absolute-pressure bound (inclusive) of the water-density model"
+const WATER_P_MAX   = Pressure(500.0, bar)
+"isothermal compressibility of water near 20 °C [1/Pa]"
+const WATER_KAPPA_T = 4.5e-10
+
+"Kell polynomial numerator coefficients (kg/m³, T in °C, ascending powers)"
+const KELL_NUM = (999.83952, 16.945176, -7.9870401e-3, -4.6170461e-5, 1.0556302e-7, -2.805425e-10)
+"Kell polynomial denominator coefficient: 1 + KELL_DEN·T"
+const KELL_DEN = 1.6879851e-2
+
+"Density of liquid water at 1 atm [kg/m³] for `T` in °C (Kell rational polynomial)."
+_water_density_atm(T::Real) = evalpoly(T, KELL_NUM) / (1 + KELL_DEN * T)
+
+"""
+    WaterState(temp::Temperature, pressure::Pressure)
+
+Validated (temperature, absolute pressure) state of liquid water for
+[`calc_density`](@ref). The inner constructor is the single `new` site and
+enforces, after unit conversion:
+
+- `WATER_T_MIN` (30 °F) < `temp` < `WATER_T_MAX` (110 °C), compared in °C;
+- `WATER_P_MIN` (1 atm) ≤ `pressure` ≤ `WATER_P_MAX` (500 bar), compared in Pa.
+
+Throws `OutOfRangeError` otherwise. Non-finite values and temperatures below
+absolute zero are rejected earlier by `Temperature` / `Pressure`.
+"""
+struct WaterState{TU<:TemperatureUnit,PU<:PressureUnit}
+    temp::Temperature{TU}
+    pressure::Pressure{PU}
+
+    function WaterState(temp::Temperature{TU}, pressure::Pressure{PU}) where {TU<:TemperatureUnit,PU<:PressureUnit}
+        t   = to_degC(temp).value
+        tlo = to_degC(WATER_T_MIN).value
+        thi = to_degC(WATER_T_MAX).value
+        tlo < t < thi ||
+            throw(OutOfRangeError("temperature $(temp) outside ($(WATER_T_MIN), $(WATER_T_MAX)) for liquid water density"))
+        p   = to_pa(pressure).value
+        plo = to_pa(WATER_P_MIN).value
+        phi = to_pa(WATER_P_MAX).value
+        plo <= p <= phi ||
+            throw(OutOfRangeError("absolute pressure $(pressure) outside [$(WATER_P_MIN), $(WATER_P_MAX)] for liquid water density"))
+        new{TU,PU}(temp, pressure)
+    end
+end
+
+Base.show(io::IO, ws::WaterState) = print(io, "WaterState(", ws.temp, ", ", ws.pressure, ")")
+
+"""
+    calc_density(ws::WaterState; out::DensityUnit=sg) -> Density
+    calc_density(temp::Temperature, pressure::Pressure; out::DensityUnit=sg) -> Density
+
+Density of liquid water at `temp` and absolute `pressure`:
+
+    ρ(T, P) = ρ_Kell(T) · (1 + κ_T · (P − P_atm))
+
+with `ρ_Kell` the IAPWS-consistent rational polynomial at 1 atm (kg/m³) and
+`κ_T = WATER_KAPPA_T`. The result is converted to `out` (`sg` by default; `ppg`,
+`kg_m3`, `ppcf` accepted). Inputs are validated by [`WaterState`](@ref):
+`OutOfRangeError` outside 30 °F < T < 110 °C or 1 atm ≤ P ≤ 500 bar.
+
+Reference points at 1 atm: 4 °C → 999.97, 20 °C → 998.2, 100 °C → 958.4 kg/m³;
+100 bar adds ≈ 0.45 %, 500 bar ≈ 2.2 %. See the section header for the
+assumptions (absolute pressure, sub-cooled liquid, constant compressibility).
+"""
+function calc_density(ws::WaterState; out::DensityUnit=sg)
+    ρ_atm = _water_density_atm(to_degC(ws.temp).value)
+    ρ_exp = (1 + WATER_KAPPA_T * (to_pa(ws.pressure).value - to_pa(WATER_P_MIN).value))
+    ρ = ρ_atm * ρ_exp
+    return to_unit(Density(ρ, kg_m3), out)
+end
+calc_density(temp::Temperature, pressure::Pressure; out::DensityUnit=sg) =
+    calc_density(WaterState(temp, pressure); out=out)
