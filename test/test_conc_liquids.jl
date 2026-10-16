@@ -8,21 +8,21 @@ using UomDefinitions
     @test LiquidConc(1.0, l_mt)   isa LiquidConc{L_PER_MT}
 
     # String display — all 4 units with different values
-    @test string(LiquidConc(0.5, ft3_sk)) == "0.5 ft³/sk"
-    @test string(LiquidConc(2.0, lhk))    == "2.0 L/100kg"
-    @test string(LiquidConc(20.0, l_mt))  == "20.0 L/MT"
+    @test string(LiquidConc(0.5, ft3_sk))   == "0.5 ft³/sk"
+    @test string(LiquidConc(2.0, lhk))      == "2.0 L/100kg"
+    @test string(LiquidConc(20.0, l_mt))    == "20.0 L/MT"
 
     # Additional display tests — realistic industry values for each unit
-    @test string(LiquidConc(0.75, gps))   == "0.75 gal/sk"
-    @test string(LiquidConc(15.0, ft3_sk)) == "15.0 ft³/sk"
+    @test string(LiquidConc(0.75, gps))     == "0.75 gal/sk"
+    @test string(LiquidConc(15.0, ft3_sk))  == "15.0 ft³/sk"
 
     # Near-zero and moderate values — display preserves precision
-    @test string(LiquidConc(0.001, lhk))   == "0.001 L/100kg"
-    @test string(LiquidConc(999.0, l_mt))  == "999.0 L/MT"
+    @test string(LiquidConc(0.001, lhk))    == "0.001 L/100kg"
+    @test string(LiquidConc(999.0, l_mt))   == "999.0 L/MT"
 
     # Large values — display works correctly
-    @test string(LiquidConc(50000.0, l_mt))  == "50000.0 L/MT"
-    @test string(LiquidConc(1e5, lhk))     == "100000.0 L/100kg"
+    @test string(LiquidConc(50000.0, l_mt)) == "50000.0 L/MT"
+    @test string(LiquidConc(1e5, lhk))      == "100000.0 L/100kg"
 end
 
 @testset "LiquidConc — constants consistent with NIST/API RP" begin
@@ -200,5 +200,81 @@ end
 
     # High concentration edge: ~500 L/MT (heavy chemical dose)
     c_heavy = LiquidConc(500.0, l_mt)
-    @test to_lhk(c_heavy).value     ≈ 50.0      atol=1e-9
+    @test to_lhk(c_heavy).value     ≈ 50.0 atol=1e-9
+end
+
+# ===== Edge Cases (T-13.3) ====================================================
+
+@testset "LiquidConc — edge: near-zero boundary values" begin
+    # Zero must construct without error on every unit (no additive = valid)
+    @test LiquidConc(0.0, ft3_sk).value == 0.0
+    @test LiquidConc(0.0, gps).value  == 0.0
+    @test LiquidConc(0.0, lhk).value  == 0.0
+    @test LiquidConc(0.0, l_mt).value == 0.0
+
+    # Near-zero positive values are valid (barely any chemical)
+    @test LiquidConc(1e-15, ft3_sk).value == 1e-15
+    @test LiquidConc(1e-12, gps).value   == 1e-12
+    @test LiquidConc(1e-10, lhk).value   == 1e-10
+    @test LiquidConc(1e-8,  l_mt).value  == 1e-8
+
+    # Conversions near zero stay bounded (no silent Inf/NaN)
+    for v in [1e-15, 1e-12, 1e-9]
+        c_ft = LiquidConc(v, ft3_sk)
+        @test isfinite(to_lmt(c_ft).value)
+        @test !isnan(to_gps(c_ft).value)
+    end
+end
+
+@testset "LiquidConc — edge: large values across Float64 range" begin
+    # Large but practical cementing concentrations
+    @test LiquidConc(1e6,   lhk).value  == 1e6
+    @test LiquidConc(1e9,   l_mt).value == 1e9
+
+    # Large-value conversions stay finite at scale boundaries
+    for v in [1e6, 1e9]
+        c_lhk = LiquidConc(v, lhk)
+        @test isfinite(to_lmt(c_lhk).value)
+        @test !isnan(to_ft3sk(c_lhk).value)
+
+        c_lmt = LiquidConc(v, l_mt)
+        @test isfinite(to_gps(c_lmt).value)
+        @test !isnan(to_lhk(c_lmt).value)
+    end
+end
+
+@testset "LiquidConc — edge: cross-conversion at scale boundaries" begin
+    # Create near-zero LiquidConc, convert through 2+ hops — stay finite
+    for v in [1e-12, 1e-9]
+        c = LiquidConc(v, ft3_sk)
+        round_trip = to_lmt(to_gps(to_lhk(c)))
+        @test isfinite(round_trip.value)
+
+        c2 = LiquidConc(v, lhk)
+        round_trip2 = to_ft3sk(to_lmt(to_gps(c2)))
+        @test isfinite(round_trip2.value)
+    end
+
+    # Create large LiquidConc, convert back — preserves order-of-magnitude
+    for v in [1e3, 1e6]
+        c = LiquidConc(v, lhk)
+        round_trip = to_lhk(to_gps(to_lmt(c)))
+        @test round_trip.value > 0.0
+
+        c2 = LiquidConc(v, l_mt)
+        round_trip2 = to_lmt(to_ft3sk(to_gps(c2)))
+        @test round_trip2.value > 0.0
+    end
+end
+
+@testset "LiquidConc — edge: IEEE 754 signed zero" begin
+    # -0.0 passes through silently on every unit (IEEE 754 compliant)
+    @test LiquidConc(-0.0, ft3_sk).value == -0.0
+    @test LiquidConc(-0.0, gps).value  == -0.0
+    @test LiquidConc(-0.0, lhk).value  == -0.0
+    @test LiquidConc(-0.0, l_mt).value == -0.0
+
+    # Round-trip through all units preserves the value (signed zero)
+    c = LiquidConc(-0.0, ft3_sk)
+    @test iszero(c.value)
 end
