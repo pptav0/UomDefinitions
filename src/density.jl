@@ -212,6 +212,16 @@ with `ρ_Kell` the IAPWS-consistent rational polynomial at 1 atm (kg/m³) and
 Reference points at 1 atm: 4 °C → 999.97, 20 °C → 998.2, 100 °C → 958.4 kg/m³;
 100 bar adds ≈ 0.45 %, 500 bar ≈ 2.2 %. See the section header for the
 assumptions (absolute pressure, sub-cooled liquid, constant compressibility).
+
+!!! note "SG stays the industry convention"
+    The result in `sg` is the absolute density divided by 1000 kg/m³
+    (`KG_M3_PER_SG`), the oilfield convention also used by `to_sg` / `to_ppg`.
+    It is *not* a relative density against water at a reference temperature:
+    fresh water at 20 °C and 1 atm returns `0.9982 SG` (= 998.2 kg/m³ =
+    8.33 ppg), not `1.0`. Use this function when the actual density of water
+    at conditions is needed (base water, flush, displacement, buoyancy); keep
+    the fixed `PPG_PER_SG` / `KG_M3_PER_SG` factors for ppg ↔ SG conversions
+    so mud and slurry weights stay consistent with field practice.
 """
 function calc_density(ws::WaterState; out::DensityUnit=sg)
     ρ_atm = _water_density_atm(to_degC(ws.temp).value)
