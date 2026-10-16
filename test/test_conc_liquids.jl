@@ -208,15 +208,15 @@ end
 @testset "LiquidConc — edge: near-zero boundary values" begin
     # Zero must construct without error on every unit (no additive = valid)
     @test LiquidConc(0.0, ft3_sk).value == 0.0
-    @test LiquidConc(0.0, gps).value  == 0.0
-    @test LiquidConc(0.0, lhk).value  == 0.0
-    @test LiquidConc(0.0, l_mt).value == 0.0
+    @test LiquidConc(0.0, gps).value    == 0.0
+    @test LiquidConc(0.0, lhk).value    == 0.0
+    @test LiquidConc(0.0, l_mt).value   == 0.0
 
     # Near-zero positive values are valid (barely any chemical)
     @test LiquidConc(1e-15, ft3_sk).value == 1e-15
-    @test LiquidConc(1e-12, gps).value   == 1e-12
-    @test LiquidConc(1e-10, lhk).value   == 1e-10
-    @test LiquidConc(1e-8,  l_mt).value  == 1e-8
+    @test LiquidConc(1e-12, gps).value    == 1e-12
+    @test LiquidConc(1e-10, lhk).value    == 1e-10
+    @test LiquidConc(1e-8,  l_mt).value   == 1e-8
 
     # Conversions near zero stay bounded (no silent Inf/NaN)
     for v in [1e-15, 1e-12, 1e-9]
@@ -270,11 +270,60 @@ end
 @testset "LiquidConc — edge: IEEE 754 signed zero" begin
     # -0.0 passes through silently on every unit (IEEE 754 compliant)
     @test LiquidConc(-0.0, ft3_sk).value == -0.0
-    @test LiquidConc(-0.0, gps).value  == -0.0
-    @test LiquidConc(-0.0, lhk).value  == -0.0
-    @test LiquidConc(-0.0, l_mt).value == -0.0
+    @test LiquidConc(-0.0, gps).value    == -0.0
+    @test LiquidConc(-0.0, lhk).value    == -0.0
+    @test LiquidConc(-0.0, l_mt).value   == -0.0
 
     # Round-trip through all units preserves the value (signed zero)
     c = LiquidConc(-0.0, ft3_sk)
     @test iszero(c.value)
+end
+
+# ===== Failure Cases (T-13.4) ===================================================
+
+@testset "LiquidConc — failure: NaN throws InvalidValueError" begin
+    @test_throws InvalidValueError LiquidConc(NaN, ft3_sk)
+    @test_throws InvalidValueError LiquidConc(NaN, gps)
+    @test_throws InvalidValueError LiquidConc(NaN, lhk)
+    @test_throws InvalidValueError LiquidConc(NaN, l_mt)
+end
+
+@testset "LiquidConc — failure: +Inf throws InvalidValueError" begin
+    @test_throws InvalidValueError LiquidConc(Inf,  ft3_sk)
+    @test_throws InvalidValueError LiquidConc(Inf,  gps)
+    @test_throws InvalidValueError LiquidConc(Inf,  lhk)
+    @test_throws InvalidValueError LiquidConc(Inf,  l_mt)
+end
+
+@testset "LiquidConc — failure: -Inf throws InvalidValueError" begin
+    @test_throws InvalidValueError LiquidConc(-Inf, ft3_sk)
+    @test_throws InvalidValueError LiquidConc(-Inf, gps)
+    @test_throws InvalidValueError LiquidConc(-Inf, lhk)
+    @test_throws InvalidValueError LiquidConc(-Inf, l_mt)
+end
+
+@testset "LiquidConc — failure: negative values throw NegativeValueError" begin
+    # Near-zero negative (barely below zero)
+    @test_throws NegativeValueError LiquidConc(-1e-15, ft3_sk)
+    @test_throws NegativeValueError LiquidConc(-1e-15, gps)
+    @test_throws NegativeValueError LiquidConc(-1e-15, lhk)
+    @test_throws NegativeValueError LiquidConc(-1e-15, l_mt)
+
+    # Small negative
+    @test_throws NegativeValueError LiquidConc(-0.5,  ft3_sk)
+    @test_throws NegativeValueError LiquidConc(-0.5,  gps)
+    @test_throws NegativeValueError LiquidConc(-0.5,  lhk)
+    @test_throws NegativeValueError LiquidConc(-0.5,  l_mt)
+
+    # Large negative
+    @test_throws NegativeValueError LiquidConc(-1000.0,   ft3_sk)
+    @test_throws NegativeValueError LiquidConc(-1000.0,   gps)
+    @test_throws NegativeValueError LiquidConc(-1000.0,   lhk)
+    @test_throws NegativeValueError LiquidConc(-1000.0,   l_mt)
+
+    # Very large negative
+    @test_throws NegativeValueError LiquidConc(-1e6,  ft3_sk)
+    @test_throws NegativeValueError LiquidConc(-1e6,  gps)
+    @test_throws NegativeValueError LiquidConc(-1e6,  lhk)
+    @test_throws NegativeValueError LiquidConc(-1e6,  l_mt)
 end
