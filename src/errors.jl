@@ -132,13 +132,9 @@ Returns:
 - `nothing` if validation passes
 """
 function validate_positive_value(v::Real)
-    if !isfinite(v)
-        throw(InvalidValueError())
-    elseif v < 0
-        throw(NegativeValueError())
-    elseif iszero(v)
-        throw(ZeroValueError())
-    end
+    isfinite(v) || throw(InvalidValueError())
+    v < 0       && throw(NegativeValueError())
+    iszero(v)   && throw(ZeroValueError())
 
     return nothing
 end
