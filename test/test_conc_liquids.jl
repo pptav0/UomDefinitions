@@ -186,19 +186,19 @@ end
 @testset "LiquidConc — industry-standard concentration values" begin
     # Typical foamer dosage: ~1 gal/sk → ~1 ft³/gal liquid ≈ ~0.134 ft³/sk gas equivalent
     c_foamer = LiquidConc(0.13368, ft3_sk)
-    @test to_gps(c_foamer).value  ≈ 1.0  atol=1e-4
+    @test to_gps(c_foamer).value    ≈ 1.0       atol=1e-4
 
     # Typical liquid retarder: ~5 L/100kg → check all paths
     c_retarder = LiquidConc(5.0, lhk)
-    @test to_lmt(c_retarder).value  ≈ 50.0     atol=1e-9
-    @test to_gps(c_retarder).value  ≈ 0.563   atol=1e-2
+    @test to_lmt(c_retarder).value  ≈ 50.0      atol=1e-9
+    @test to_gps(c_retarder).value  ≈ 0.563     atol=1e-2
 
     # Typical water cut / bulk slurry: ~100 L/MT (low) → should convert correctly
     c_low = LiquidConc(100.0, l_mt)
-    @test to_lhk(c_low).value       ≈ 10.0     atol=1e-9
-    @test to_gps(c_low).value        ≈ 1.126   atol=1e-2
+    @test to_lhk(c_low).value       ≈ 10.0      atol=1e-9
+    @test to_gps(c_low).value       ≈ 1.126     atol=1e-2
 
     # High concentration edge: ~500 L/MT (heavy chemical dose)
     c_heavy = LiquidConc(500.0, l_mt)
-    @test to_lhk(c_heavy).value     ≈ 50.0     atol=1e-9
+    @test to_lhk(c_heavy).value     ≈ 50.0      atol=1e-9
 end
