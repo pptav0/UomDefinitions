@@ -17,6 +17,7 @@ include("./volume.jl")
 include("./gas.jl")
 include("./conc_liquids.jl")
 include("./length.jl")
+include("./pressure_grad.jl")  # needs PA_PER_PSI, PA_PER_BAR, M_PER_FT
 include("./temperature.jl")
 include("./time.jl")
 include("./angle.jl")
@@ -85,6 +86,12 @@ export LengthUnit, Length
 export FT, M, ft, m
 export to_ft, to_m
 export M_PER_FT, FT_PER_M, IN_PER_FT, MM_PER_FT
+
+# - Pressure gradient
+export PressureGradientUnit, PressureGradient
+export PSI_FT, BAR_M, PA_M, KPA_M, psi_ft, bar_m, pa_m, kpa_m
+export to_psi_ft, to_bar_m, to_pa_m, to_kpa_m
+export PA_M_PER_PSI_FT, BAR_M_PER_PSI_FT, KPA_M_PER_PSI_FT
 
 # - Temperature
 export TemperatureUnit, Temperature
