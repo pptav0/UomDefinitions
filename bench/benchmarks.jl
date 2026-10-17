@@ -77,7 +77,11 @@ const PARAMS_FILE = joinpath(@__DIR__, "params.json")
 
 function run_benchmarks()
     if isfile(PARAMS_FILE)
-        BenchmarkTools.loadparams!(SUITE, BenchmarkTools.load(PARAMS_FILE)[1], :evals)
+        BenchmarkTools.loadparams!(
+            SUITE,
+            BenchmarkTools.load(PARAMS_FILE)[1],
+            :evals,
+        )
         @info "Loaded benchmark evaluation counts" PARAMS_FILE
     else
         @info "Tuning benchmark suite"
@@ -87,7 +91,24 @@ function run_benchmarks()
     end
 
     results = BenchmarkTools.run(SUITE; verbose = true)
+    show_results(results)
+
     return results
+end
+
+function show_results(results::BenchmarkTools.BenchmarkGroup)
+    for (path, trial) in BenchmarkTools.leaves(results)
+        name = join(string.(path), " / ")
+
+        println("\n", repeat("=", 78))
+        println(name)
+        println(repeat("-", 78))
+
+        show(stdout, MIME("text/plain"), trial)
+        println()
+    end
+
+    return nothing
 end
 
 
