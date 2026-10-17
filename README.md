@@ -100,7 +100,7 @@ to_in(Diameter(8, d64))        # 0.125 in (choke size)
 to_m(depth).value              # 3810.0
 ```
 
-Quantities are plain mutable structs with a single `value::Float64` field; there is no operator overloading, so arithmetic is done on `.value` and re-tagged explicitly.
+Quantities are immutable structs with a single `value::Float64` field, validated once by the inner constructor; a signed zero (`-0.0`) is stored as `0.0`. There is no operator overloading, so arithmetic is done on `.value` and re-tagged explicitly. To copy a quantity with a new value, use `typeof(q)(x)` (e.g. `typeof(p)(250.0)`), which re-runs the checks; `q.value = x` is an error.
 
 ## Extending
 

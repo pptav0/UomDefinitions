@@ -52,7 +52,7 @@ struct Angle{U<:AngleUnit}
         isfinite(value) || throw(InvalidValueError())   # before range: abs(NaN) would mis-route
         v = Float64(value); _check_range(v, U())
 
-        new{U}(v)
+        new{U}(_unsign_zero(v))
     end
 end
 

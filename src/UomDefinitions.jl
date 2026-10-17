@@ -9,6 +9,11 @@ abstract type Uom end
 "Convert a quantity to the unit given as a singleton; one method set per family."
 function to_unit end
 
+# Every quantity inner constructor stores `_unsign_zero(value)`: IEEE 754 gives
+# -0.0 + 0.0 == +0.0, and x + 0.0 === x for every other finite x, so a signed
+# zero is stored as plain 0.0 and immutable `==` (bitwise) treats it as zero.
+_unsign_zero(x::Real) = Float64(x) + 0.0
+
 include("./errors.jl")      # error handling
 include("./diameters.jl")
 include("./pressure.jl")

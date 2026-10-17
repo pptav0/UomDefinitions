@@ -26,13 +26,13 @@ Throws:
 - `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`\
 - `NegativeValueError` if `value < 0` (negative density is impossible)
 """
-mutable struct Density{U<:DensityUnit}
+struct Density{U<:DensityUnit}
     value::Float64
 
     function Density{U}(value::Real) where {U<:DensityUnit}
         isfinite(value) || throw(InvalidValueError())
         value >= 0.0    || throw(NegativeValueError())
-        new{U}(value)
+        new{U}(_unsign_zero(value))
     end
 end
 
@@ -42,15 +42,15 @@ Density(v::Real, ::U) where {U<:DensityUnit} = Density{U}(Float64(v))
 # ========= CONSTANTS =========================================================
 "SG reference density (industry convention, not physical water mass)"
 const KG_M3_PER_SG  = 1000.0
-"1 ppg expressed in kg/m³ — derived: KG_PER_LB * L_PER_M3 / L_PER_GAL ≈ 119.826427"
+"1 ppg expressed in kg/m³ — derived: `KG_PER_LB * L_PER_M3 / L_PER_GAL` ≈ 119.826427"
 const KG_M3_PER_PPG = KG_PER_LB * L_PER_M3 / L_PER_GAL
-"1 SG expressed in ppg — derived: KG_M3_PER_SG / KG_M3_PER_PPG ≈ 8.345404"
+"1 SG expressed in ppg — derived: `KG_M3_PER_SG / KG_M3_PER_PPG` ≈ 8.345404"
 const PPG_PER_SG    = KG_M3_PER_SG / KG_M3_PER_PPG
-"1 lb/ft³ expressed in kg/m³ — derived: KG_PER_LB / M3_PER_FT3 ≈ 16.018463"
+"1 lb/ft³ expressed in kg/m³ — derived: `KG_PER_LB / M3_PER_FT3` ≈ 16.018463"
 const KG_M3_PER_PPCF = KG_PER_LB / M3_PER_FT3
-"1 ppg expressed in lb/ft³ — derived: L_PER_FT3 / L_PER_GAL ≈ 7.480520 (= GAL_PER_FT3)"
+"1 ppg expressed in lb/ft³ — derived: `L_PER_FT3 / L_PER_GAL` ≈ 7.480520 (= `GAL_PER_FT3`)"
 const PPCF_PER_PPG   = L_PER_FT3 / L_PER_GAL
-"1 SG expressed in lb/ft³ — derived: KG_M3_PER_SG / KG_M3_PER_PPCF ≈ 62.427961"
+"1 SG expressed in lb/ft³ — derived: `KG_M3_PER_SG / KG_M3_PER_PPCF` ≈ 62.427961"
 const PPCF_PER_SG    = KG_M3_PER_SG / KG_M3_PER_PPCF
 
 # ========= CONVERSIONS =======================================================

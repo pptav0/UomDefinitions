@@ -2,6 +2,7 @@ using Test
 using UomDefinitions
 
 @testset "UomDefinitions" begin
+    include("test_immutability.jl")
     include("test_diameters.jl")
     include("test_volume.jl")
     include("test_pressure.jl")

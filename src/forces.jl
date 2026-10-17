@@ -35,12 +35,12 @@ Throws:
 - ``InvalidValueError`` if ``value`` is ``NaN``, ``Inf``, or ``-Inf``
   (negative values are physically valid for opposite-direction forces)
 """
-mutable struct Force{U<:ForceUnit}
+struct Force{U<:ForceUnit}
     value::Float64
 
     function Force{U}(value::Real) where {U<:ForceUnit}
         isfinite(value) || throw(InvalidValueError())
-        new{U}(value)  # negative values now allowed (opposite direction forces)
+        new{U}(_unsign_zero(value))  # negative values now allowed (opposite direction forces)
     end
 end
 

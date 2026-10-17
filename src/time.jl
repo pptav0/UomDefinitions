@@ -31,7 +31,7 @@ struct Time{U<:TimeUnit}
         isfinite(value) || throw(InvalidValueError())
         value < 0 && throw(NegativeValueError())
 
-        new{U}(Float64(value))
+        new{U}(_unsign_zero(Float64(value)))
     end
 end
 
@@ -43,7 +43,7 @@ Time(v::Real, ::U) where {U<:TimeUnit} = Time{U}(Float64(v))
 const S_PER_MIN  = 60.0
 "minutes per hour"
 const MIN_PER_HR = 60.0
-"seconds per hour — derived: S_PER_MIN * MIN_PER_HR = 3600"
+"seconds per hour — derived: `S_PER_MIN * MIN_PER_HR` = 3600"
 const S_PER_HR   = S_PER_MIN * MIN_PER_HR
 
 # ========= CONVERSIONS =======================================================

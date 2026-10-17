@@ -37,7 +37,7 @@ struct PressureGradient{U<:PressureGradientUnit}
     function PressureGradient{U}(value::Real) where {U<:PressureGradientUnit}
         isfinite(value) || throw(InvalidValueError())
 
-        new{U}(Float64(value))
+        new{U}(_unsign_zero(Float64(value)))
     end
 end
 
@@ -45,11 +45,11 @@ end
 PressureGradient(v::Real, ::U) where {U<:PressureGradientUnit} = PressureGradient{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
-"Pa/m per psi/ft — PA_PER_PSI / M_PER_FT ≈ 22620.6"
+"Pa/m per psi/ft — `PA_PER_PSI / M_PER_FT` ≈ 22620.6"
 const PA_M_PER_PSI_FT  = PA_PER_PSI / M_PER_FT
-"bar/m per psi/ft — PA_M_PER_PSI_FT / PA_PER_BAR ≈ 0.22621"
+"bar/m per psi/ft — `PA_M_PER_PSI_FT / PA_PER_BAR` ≈ 0.22621"
 const BAR_M_PER_PSI_FT = PA_M_PER_PSI_FT / PA_PER_BAR
-"kPa/m per psi/ft — PA_M_PER_PSI_FT / 1000 ≈ 22.621"
+"kPa/m per psi/ft — `PA_M_PER_PSI_FT / 1000` ≈ 22.621"
 const KPA_M_PER_PSI_FT = PA_M_PER_PSI_FT / 1000
 
 # ========= CONVERSIONS =======================================================

@@ -45,7 +45,7 @@ struct TempGradient{U<:TempGradientUnit}
     function TempGradient{U}(value::Real) where {U<:TempGradientUnit}
         isfinite(value) || throw(InvalidValueError())
 
-        new{U}(Float64(value))
+        new{U}(_unsign_zero(Float64(value)))
     end
 end
 
@@ -54,7 +54,7 @@ TempGradient(v::Real, ::U) where {U<:TempGradientUnit} = TempGradient{U}(Float64
 
 # ========= CONSTANTS =========================================================
 """
-°C/100m per °F/100ft — FT_PER_M / F_PER_C ≈ 1.82269.
+°C/100m per °F/100ft — `FT_PER_M / F_PER_C` ≈ 1.82269.
 
 The same factor converts °F/ft → °C/m and °F/30ft → °C/30m (equal length count).
 

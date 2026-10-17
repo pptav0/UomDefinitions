@@ -23,12 +23,12 @@ Note: Pressure values must be finite. Negative values are allowed.
 Throws:
 - `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
 """
-mutable struct Pressure{U<:PressureUnit}
+struct Pressure{U<:PressureUnit}
     value::Float64
 
     function Pressure{U}(value::Real) where {U<:PressureUnit}
         isfinite(value) || throw(InvalidValueError())
-        new{U}(value)
+        new{U}(_unsign_zero(value))
     end
 end
 

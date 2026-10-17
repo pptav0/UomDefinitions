@@ -345,7 +345,7 @@ end
     # 100 iterations at scale 3, diff should be ~ 0.1 ULP
     for _ in 1:100
         c = to_bbl_ft(to_gal_ft(to_l_m(to_m3_m(c))))
-        c.value += 1e-3
+        c = Capacity(c.value + 1e-3, bbl_ft)   # immutable: re-tag, don't mutate
     end
 
     @test isfinite(c.value) && c.value > 0

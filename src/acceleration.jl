@@ -16,12 +16,12 @@ const ft_s2 = FT_S2()
 
 Typed acceleration (also force per unit mass). Units: `M_S2`, `FT_S2`.
 """
-mutable struct Acceleration{U<:AccelerationUnit}
+struct Acceleration{U<:AccelerationUnit}
     value::Float64
 
     function Acceleration{U}(value::Real) where {U<:AccelerationUnit}
         isfinite(value) || throw(InvalidValueError())
-        new{U}(value)  # negative values now allowed (opposite direction forces)
+        new{U}(_unsign_zero(value))  # negative values now allowed (opposite direction forces)
     end
 end
 
