@@ -4,11 +4,7 @@ version = "0.4.0"
 authors = ["Jose Guzman <pepetavo@pm.me>"]
 
 [deps]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-
-[sources]
-BenchmarkTools = {path = "/Users/joseguzman/.julia/dev/BenchmarkTools"}
 
 [compat]
 ConstructionBase = "1.6.0"
