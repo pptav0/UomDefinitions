@@ -13,6 +13,7 @@ using UomDefinitions
     include("test_time.jl")
     include("test_angle.jl")
     include("test_pressure_grad.jl")
+    include("test_temp_grad.jl")
     include("test_gas.jl")
     include("test_conc_liquids.jl")
     include("test_capacity.jl")

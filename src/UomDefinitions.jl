@@ -19,6 +19,7 @@ include("./conc_liquids.jl")
 include("./length.jl")
 include("./pressure_grad.jl")  # needs PA_PER_PSI, PA_PER_BAR, M_PER_FT
 include("./temperature.jl")
+include("./temp_grad.jl")       # needs F_PER_C, FT_PER_M
 include("./time.jl")
 include("./angle.jl")
 include("./density.jl")
@@ -98,6 +99,13 @@ export TemperatureUnit, Temperature
 export DEGF, DEGC, KELVIN, degF, degC, kelvin
 export to_degF, to_degC, to_kelvin, to_rankine
 export ZERO_C_IN_K, ZERO_F_IN_R, ZERO_C_IN_F, F_PER_C
+
+# - Temperature gradient
+export TempGradientUnit, TempGradient
+export DEGF_FT, DEGF_100FT, DEGF_30FT, DEGC_M, DEGC_100M, DEGC_30M
+export degF_ft, degF_100ft, degF_30ft, degC_m, degC_100m, degC_30m
+export to_degF_ft, to_degF_100ft, to_degF_30ft, to_degC_m, to_degC_100m, to_degC_30m
+export DEGC_100M_PER_DEGF_100FT
 
 # - Time
 export TimeUnit, Time
