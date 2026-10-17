@@ -31,13 +31,13 @@ Throws:
 - `InvalidValueError` if value is NaN, Inf, or -Inf
 - `NegativeValueError` if value < 0
 """
-mutable struct LiquidConc{U<:LiquidConcUnit}
+struct LiquidConc{U<:LiquidConcUnit}
     value::Float64
 
     function LiquidConc{U}(value::Real) where {U<:LiquidConcUnit}
         isfinite(value) || throw(InvalidValueError())
         value < 0       && throw(NegativeValueError())
-        new{U}(float(value))
+        new{U}(_unsign_zero(float(value)))
     end
 end
 

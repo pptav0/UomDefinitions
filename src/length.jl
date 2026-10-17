@@ -15,14 +15,14 @@ const m  = M()
 
 Typed quantity for lengths / depths (TVD, MD). Use `FT` or `M`.
 """
-mutable struct Length{U<:LengthUnit}
+struct Length{U<:LengthUnit}
     value::Float64
 
     function Length{U}(value::Real) where {U<:LengthUnit}
         isfinite(value) || throw(InvalidValueError())
         value < 0 && throw(NegativeValueError())
 
-        new{U}(float(value))
+        new{U}(_unsign_zero(float(value)))
     end
 end
 
@@ -34,7 +34,7 @@ const M_PER_FT = 0.3048
 const FT_PER_M = 1 / M_PER_FT
 "inches per foot"
 const IN_PER_FT = 12.0
-"millimeters per foot — derived: MM_PER_IN * IN_PER_FT = 304.8"
+"millimeters per foot — derived: `MM_PER_IN * IN_PER_FT` = 304.8"
 const MM_PER_FT = MM_PER_IN * IN_PER_FT
 
 # ========= CONVERSIONS =======================================================

@@ -27,23 +27,23 @@ Throws:
 - `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
 - `NegativeValueError` if `value < 0` (area cannot be negative)
 """
-mutable struct Area{U<:AreaUnit}
+struct Area{U<:AreaUnit}
     value::Float64
 
     function Area{U}(value::Real) where {U<:AreaUnit}
         isfinite(value)   || throw(InvalidValueError())
         value < 0.0       && throw(NegativeValueError())
 
-        new{U}(value)
+        new{U}(_unsign_zero(value))
     end
 end
 
 # ergonomic constructors (outer — delegate to inner above)
 Area(v::Real, ::U) where {U<:AreaUnit} = Area{U}(Float64(v))
 
-"square meters per square inch — derived: (MM_PER_IN / 1000)²"
+"square meters per square inch — derived: `(MM_PER_IN / 1000)²`"
 const M2_PER_IN2 = (MM_PER_IN / 1000)^2
-"square meters per square foot — derived: M_PER_FT²"
+"square meters per square foot — derived: `M_PER_FT²`"
 const M2_PER_FT2 = M_PER_FT^2
 
 "Convert to m²"

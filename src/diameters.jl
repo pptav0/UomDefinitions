@@ -14,13 +14,13 @@ const mm   = MM()
 
 Represents a diameter with its unit (`IN` or `MM`).
 """
-mutable struct Diameter{U<:DiameterUnit}
+struct Diameter{U<:DiameterUnit}
     value::Float64
 
     function Diameter{U}(v::Real) where {U<:DiameterUnit}
         isfinite(v) || throw(InvalidValueError())
         v < 0 && throw(NegativeValueError())
-        new{U}(float(v))
+        new{U}(_unsign_zero(float(v)))
     end
 end
 

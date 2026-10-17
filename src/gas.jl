@@ -23,13 +23,13 @@ Throws:
 - `InvalidValueError` if value is NaN, Inf, or -Inf
 - `NegativeValueError` if value < 0
 """
-mutable struct GasConc{U<:GasConcUnit}
+struct GasConc{U<:GasConcUnit}
     value::Float64
 
     function GasConc{U}(value::Real) where {U<:GasConcUnit}
         isfinite(value) || throw(InvalidValueError())
         value < 0       && throw(NegativeValueError())
-        new{U}(float(value))
+        new{U}(_unsign_zero(float(value)))
     end
 end
 
@@ -46,13 +46,13 @@ Throws:
 - `InvalidValueError` if value is NaN, Inf, or -Inf
 - `NegativeValueError` if value < 0
 """
-mutable struct GasRate{U<:GasRateUnit}
+struct GasRate{U<:GasRateUnit}
     value::Float64
 
     function GasRate{U}(value::Real) where {U<:GasRateUnit}
         isfinite(value) || throw(InvalidValueError())
         value < 0       && throw(NegativeValueError())
-        new{U}(float(value))
+        new{U}(_unsign_zero(float(value)))
     end
 end
 

@@ -39,13 +39,13 @@ Throws:
 - `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
 - `BelowAbsoluteZeroError` otherwise (depends on unit context)
 """
-mutable struct Temperature{U<:TemperatureUnit}
+struct Temperature{U<:TemperatureUnit}
     value::Float64
 
     function Temperature{U}(value::Real) where {U<:TemperatureUnit}
         isfinite(value)::Bool || throw(InvalidValueError())
          _below_abs_zero(U(), Float64(value)) && throw(BelowAbsoluteZeroError())
-        new{U}(Float64(value))
+        new{U}(_unsign_zero(Float64(value)))
     end
 end
 

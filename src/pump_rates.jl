@@ -21,13 +21,13 @@ Throws:
 - ``InvalidValueError`` if ``value`` is ``NaN``, ``Inf``, or ``-Inf``
 - ``NegativeValueError`` if ``value`` is negative
 """
-mutable struct PumpRate{U<:PumpRateUnit}
+struct PumpRate{U<:PumpRateUnit}
     value::Float64
 
     function PumpRate{U}(value::Real) where {U<:PumpRateUnit}
         isfinite(value) || throw(InvalidValueError())
         value < 0 && throw(NegativeValueError())     # zero allowed (idle state)
-        new{U}(float(value))
+        new{U}(_unsign_zero(float(value)))
     end
 end
 

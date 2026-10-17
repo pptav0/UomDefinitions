@@ -47,12 +47,12 @@ zero in downstream capacity calculations.
 Throws:
 - `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
 """
-mutable struct Volume{U<:VolumeUnit}
+struct Volume{U<:VolumeUnit}
     value::Float64
 
     function Volume{U}(value::Real) where {U<:VolumeUnit}
         isfinite(value) || throw(InvalidValueError())
-        new{U}(value)
+        new{U}(_unsign_zero(value))
     end
 end
 
@@ -163,13 +163,13 @@ Throws:
 - `InvalidValueError`  if `value` is `NaN`, `Inf`, or `-Inf`
 - `NegativeValueError` if `value < 0` (negative displacement impossible)
 """
-mutable struct StrokeCapacity{U<:StrokeCapacityUnit}
+struct StrokeCapacity{U<:StrokeCapacityUnit}
     value::Float64
 
     function StrokeCapacity{U}(value::Real) where {U<:StrokeCapacityUnit}
         isfinite(value) || throw(InvalidValueError())
         value >= 0.0    || throw(NegativeValueError())
-        new{U}(value)
+        new{U}(_unsign_zero(value))
     end
 end
 

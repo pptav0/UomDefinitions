@@ -24,3 +24,6 @@ Cargo.lock
 .env
 **/.DS_Store
 **/.superpowers
+
+# Julia benchmark environment (machine-specific versions)
+bench/Manifest.toml

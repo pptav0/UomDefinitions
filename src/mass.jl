@@ -27,14 +27,14 @@ Throws:
 - ``InvalidValueError`` if ``value`` is ``NaN``, ``Inf``, or ``-Inf``
 - ``NegativeValueError`` if ``value < 0`` (mass cannot be negative)
 """
-mutable struct Mass{U<:MassUnit}
+struct Mass{U<:MassUnit}
     value::Float64
 
     function Mass{U}(value::Real) where {U<:MassUnit}
         isfinite(value)       || throw(InvalidValueError())
         value < 0.0           && throw(NegativeValueError())
 
-        new{U}(value)
+        new{U}(_unsign_zero(value))
     end
 end
 

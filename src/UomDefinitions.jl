@@ -9,6 +9,11 @@ abstract type Uom end
 "Convert a quantity to the unit given as a singleton; one method set per family."
 function to_unit end
 
+# Every quantity inner constructor stores `_unsign_zero(value)`: IEEE 754 gives
+# -0.0 + 0.0 == +0.0, and x + 0.0 === x for every other finite x, so a signed
+# zero is stored as plain 0.0 and immutable `==` (bitwise) treats it as zero.
+_unsign_zero(x::Real) = Float64(x) + 0.0
+
 include("./errors.jl")      # error handling
 include("./diameters.jl")
 include("./pressure.jl")
@@ -17,7 +22,11 @@ include("./volume.jl")
 include("./gas.jl")
 include("./conc_liquids.jl")
 include("./length.jl")
+include("./pressure_grad.jl")  # needs PA_PER_PSI, PA_PER_BAR, M_PER_FT
 include("./temperature.jl")
+include("./temp_grad.jl")       # needs F_PER_C, FT_PER_M
+include("./time.jl")
+include("./angle.jl")
 include("./density.jl")
 include("./capacity.jl")      # needs volume, pump_rates, length constants
 include("./area.jl")          # needs MM_PER_IN, M_PER_FT
@@ -84,11 +93,36 @@ export FT, M, ft, m
 export to_ft, to_m
 export M_PER_FT, FT_PER_M, IN_PER_FT, MM_PER_FT
 
+# - Pressure gradient
+export PressureGradientUnit, PressureGradient
+export PSI_FT, BAR_M, PA_M, KPA_M, psi_ft, bar_m, pa_m, kpa_m
+export to_psi_ft, to_bar_m, to_pa_m, to_kpa_m
+export PA_M_PER_PSI_FT, BAR_M_PER_PSI_FT, KPA_M_PER_PSI_FT
+
 # - Temperature
 export TemperatureUnit, Temperature
 export DEGF, DEGC, KELVIN, degF, degC, kelvin
 export to_degF, to_degC, to_kelvin, to_rankine
 export ZERO_C_IN_K, ZERO_F_IN_R, ZERO_C_IN_F, F_PER_C
+
+# - Temperature gradient
+export TempGradientUnit, TempGradient
+export DEGF_FT, DEGF_100FT, DEGF_30FT, DEGC_M, DEGC_100M, DEGC_30M
+export degF_ft, degF_100ft, degF_30ft, degC_m, degC_100m, degC_30m
+export to_degF_ft, to_degF_100ft, to_degF_30ft, to_degC_m, to_degC_100m, to_degC_30m
+export DEGC_100M_PER_DEGF_100FT
+
+# - Time
+export TimeUnit, Time
+export MIN, S, HR, mins, secs, hrs
+export to_min, to_s, to_hr
+export S_PER_MIN, MIN_PER_HR, S_PER_HR
+
+# - Angle
+export AngleUnit, Angle
+export DEG, RAD, deg, rad
+export to_deg, to_rad
+export RAD_PER_DEG, DEG_PER_RAD
 
 # - Density
 export DensityUnit, Density
