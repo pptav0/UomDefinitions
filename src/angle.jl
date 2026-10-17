@@ -18,8 +18,10 @@ const _ANGLE_RTOL = 1e-12
 _full_turn(::DEG) = 360.0
 _full_turn(::RAD) = 2π
 
-# Single comparison site; the boundary is picked by dispatch on the type
-# parameter `U` and constant-folded at compile time.
+# Single comparison site. The boundary comes from `_full_turn`, dispatched on
+# the unit instance; the inner constructor passes `U()` (free for singleton
+# units), and the bound is constant-folded at compile time. A unit without a
+# `_full_turn` method fails loudly with a MethodError.
 function _check_range(v::Real, u::U) where {U<:AngleUnit}
     lim = (_full_turn(u) * (1 + _ANGLE_RTOL))
     abs(v) <= lim ? nothing : throw(AngleValueError())
