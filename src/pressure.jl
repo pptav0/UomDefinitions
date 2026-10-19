@@ -1,5 +1,4 @@
 # ===== Units hierarchy =====
-abstract type Uom end
 abstract type PressureUnit <: Uom end
 
 "bar"
@@ -7,7 +6,7 @@ struct BAR <: PressureUnit end
 "pound per square inch"
 struct PSI <: PressureUnit end
 "pascal"
-struct PA  <: PressureUnit end
+struct PA   <: PressureUnit end
 
 # handy singletons
 const bar = BAR()
@@ -16,25 +15,30 @@ const pa  = PA()
 
 # ===== Quantity type =====
 """
-    Pressure{U<:PressureUnit}(value)
+    Pressure{U<:PressureUnit}(value::Real)
 
 Pressure quantity tagged with its unit (`BAR`, `PSI`, or `PA`).
+
+Note: Pressure values must be finite. Negative values are allowed.
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
 """
-mutable struct Pressure{U<:PressureUnit}
+struct Pressure{U<:PressureUnit}
     value::Float64
-    # Pressure(x::Real, ::U) where {U<:PressureUnit} = new{U}(float(x))
+
+    function Pressure{U}(value::Real) where {U<:PressureUnit}
+        isfinite(value) || throw(InvalidValueError())
+        new{U}(_unsign_zero(value))
+    end
 end
 
-# ergonomic constructors
-Pressure(v::Real, ::BAR) = Pressure{BAR}(float(v))
-Pressure(v::Real, ::PSI) = Pressure{PSI}(float(v))
-Pressure(v::Real, ::PA)  = Pressure{PA}(float(v))
+Pressure(v::Real, ::U) where {U<:PressureUnit} = Pressure{U}(Float64(v))
 
 # ===== constants =====
 const P_ATM       = Pressure(14.7, psi)
-const PSI_PER_BAR = 14.5037738007
+const PSI_PER_BAR = 14.503773773
 const PA_PER_BAR  = 1.0e5
-const PA_PER_PSI  = 6894.757293168
+const PA_PER_PSI  = PA_PER_BAR / PSI_PER_BAR   # 6894.7572932 (exact)
 
 # ===== conversions =====
 
@@ -97,5 +101,29 @@ Base.show(io::IO, p::Pressure{BAR}) = print(io, "$(p.value) bar")
 Base.show(io::IO, p::Pressure{PSI}) = print(io, "$(p.value) psi")
 Base.show(io::IO, p::Pressure{PA})  = print(io, "$(p.value) Pa")
 
-Base.setproperty!(r::Pressure{U}, ::Val{:value}, x::Real) where {U} =
-    Pressure(x, U)
+# ===== megapascal (added for differential-pressure reporting) =====
+"megapascal"
+struct MPA <: PressureUnit end
+const mpa = MPA()
+const PA_PER_MPA = 1.0e6
+
+# Constructor with validation
+function Pressure(v::Real, ::MPA)
+    validate_value(v)
+    return Pressure{MPA}(float(v))
+end
+
+to_pa(p::Pressure{MPA})   = Pressure{PA}(p.value * PA_PER_MPA)
+to_bar(p::Pressure{MPA}) = to_bar(to_pa(p))
+to_psi(p::Pressure{MPA}) = to_psi(to_pa(p))
+"Convert to megapascals"
+to_mpa(p::Pressure{MPA}) = p
+to_mpa(p::Pressure)       = Pressure{MPA}(to_pa(p).value / PA_PER_MPA)
+to_mpa(v::Real, u::PressureUnit) = to_mpa(Pressure(v, u))
+Base.show(io::IO, p::Pressure{MPA}) = print(io, "$(p.value) MPa")
+
+"Convert to the unit given as a singleton (`bar`, `psi`, `pa`, `mpa`)."
+to_unit(p::Pressure, ::BAR) = to_bar(p)
+to_unit(p::Pressure, ::PSI) = to_psi(p)
+to_unit(p::Pressure, ::PA)  = to_pa(p)
+to_unit(p::Pressure, ::MPA) = to_mpa(p)

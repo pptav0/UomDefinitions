@@ -16,25 +16,41 @@ const degF   = DEGF()
 const degC   = DEGC()
 const kelvin = KELVIN()
 
+# Per-unit below-absolute-zero threshold: returns true iff the value is at or below absolute zero.
+_below_abs_zero(::DEGF, v::Float64)   = v < -ZERO_F_IN_R    # −459.67 °F
+_below_abs_zero(::DEGC, v::Float64)   = v < -ZERO_C_IN_K    # −273.15 °C
+_below_abs_zero(::KELVIN, v::Float64) = v < 0               # 0 K
+
+# ========= QUANTITY TYPE =====================================================
+
 """
-    Temperature{U<:TemperatureUnit}(value)
+    Temperature{U<:TemperatureUnit}(value::Real)
 
 Typed quantity for temperatures. Units: `DEGF`, `DEGC`, `KELVIN`.
 
 !!! warning "Offset conversions"
     Temperature differences are not the same as absolute temperatures.
-    `to_degC(Temperature(32.0, degF))` returns 0 °C (absolute); converting
+     `to_degC(Temperature(32.0, degF))` returns 0 °C (absolute); converting
     a *delta* would use only the scale factor (5/9), which is not provided
     here deliberately — this type represents absolute temperatures.
+
+Note: values must be finite and at or above absolute zero for the given unit.
+Throws:
+- `InvalidValueError` if `value` is `NaN`, `Inf`, or `-Inf`
+- `BelowAbsoluteZeroError` otherwise (depends on unit context)
 """
-mutable struct Temperature{U<:TemperatureUnit}
+struct Temperature{U<:TemperatureUnit}
     value::Float64
+
+    function Temperature{U}(value::Real) where {U<:TemperatureUnit}
+        isfinite(value)::Bool || throw(InvalidValueError())
+         _below_abs_zero(U(), Float64(value)) && throw(BelowAbsoluteZeroError())
+        new{U}(_unsign_zero(Float64(value)))
+    end
 end
 
-# ergonomic constructors
-Temperature(v::Real, ::DEGF)   = Temperature{DEGF}(float(v))
-Temperature(v::Real, ::DEGC)   = Temperature{DEGC}(float(v))
-Temperature(v::Real, ::KELVIN) = Temperature{KELVIN}(float(v))
+# Ergonomic numeric + unit dispatcher (matches pressure.jl pattern)
+Temperature(v::Real, ::U) where {U<:TemperatureUnit} = Temperature{U}(Float64(v))
 
 # ========= CONSTANTS =========================================================
 "zero of the Celsius scale expressed in kelvin"
@@ -43,6 +59,8 @@ const ZERO_C_IN_K     = 273.15
 const ZERO_F_IN_R     = 459.67
 "scale factor: 1 K (or 1 °C) = 1.8 R (or 1.8 °F)"
 const F_PER_C         = 1.8
+"zero of the Celsius scale expressed in °F"
+const ZERO_C_IN_F     = 32.0
 
 # ========= CONVERSIONS =======================================================
 """
@@ -51,8 +69,8 @@ const F_PER_C         = 1.8
 Convert to **degrees Fahrenheit** (includes offset, not a delta).
 """
 to_degF(t::Temperature{DEGF})   = t
-to_degF(t::Temperature{DEGC})   = Temperature{DEGF}(t.value * F_PER_C + 32.0)
-to_degF(t::Temperature{KELVIN}) = Temperature{DEGF}((t.value - ZERO_C_IN_K) * F_PER_C + 32.0)
+to_degF(t::Temperature{DEGC})   = Temperature{DEGF}(t.value * F_PER_C + ZERO_C_IN_F)
+to_degF(t::Temperature{KELVIN}) = Temperature{DEGF}((t.value - ZERO_C_IN_K) * F_PER_C + ZERO_C_IN_F)
 
 """
     to_degC(t::Temperature) -> Temperature{DEGC}
@@ -60,7 +78,7 @@ to_degF(t::Temperature{KELVIN}) = Temperature{DEGF}((t.value - ZERO_C_IN_K) * F_
 Convert to **degrees Celsius** (includes offset, not a delta).
 """
 to_degC(t::Temperature{DEGC})   = t
-to_degC(t::Temperature{DEGF})   = Temperature{DEGC}((t.value - 32.0) / F_PER_C)
+to_degC(t::Temperature{DEGF})   = Temperature{DEGC}((t.value - ZERO_C_IN_F) / F_PER_C)
 to_degC(t::Temperature{KELVIN}) = Temperature{DEGC}(t.value - ZERO_C_IN_K)
 
 """
@@ -70,7 +88,7 @@ Convert to **kelvin** (absolute).
 """
 to_kelvin(t::Temperature{KELVIN}) = t
 to_kelvin(t::Temperature{DEGC})   = Temperature{KELVIN}(t.value + ZERO_C_IN_K)
-to_kelvin(t::Temperature{DEGF})   = Temperature{KELVIN}((t.value - 32.0) / F_PER_C + ZERO_C_IN_K)
+to_kelvin(t::Temperature{DEGF})   = Temperature{KELVIN}((t.value - ZERO_C_IN_F) / F_PER_C + ZERO_C_IN_K)
 
 """
     to_rankine(t::Temperature) -> Float64
@@ -104,6 +122,3 @@ to_kelvin(v::Real, ::DEGC)   = to_kelvin(Temperature(v, degC))
 Base.show(io::IO, t::Temperature{DEGF})   = print(io, "$(t.value) °F")
 Base.show(io::IO, t::Temperature{DEGC})   = print(io, "$(t.value) °C")
 Base.show(io::IO, t::Temperature{KELVIN}) = print(io, "$(t.value) K")
-
-Base.setproperty!(t::Temperature{U}, ::Val{:value}, x::Real) where {U} =
-    Temperature(x, U)
