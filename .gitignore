@@ -26,4 +26,4 @@ Cargo.lock
 **/.superpowers
 
 # Julia benchmark environment (machine-specific versions)
-bench/Manifest.toml
+**/Manifest.toml
