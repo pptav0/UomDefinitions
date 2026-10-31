@@ -71,7 +71,7 @@ Convert to L/100kg.
 to_lhk(c::LiquidConc{LHK}) = c
 to_lhk(c::LiquidConc{FT3_PER_SK}) = c.value * (KG_PER_HKG / KG_PER_SK) * L_PER_FT3   |> LiquidConc{LHK}
 to_lhk(c::LiquidConc{GPS}) = c.value * L_PER_GAL / KG_PER_SK * KG_PER_HKG            |> LiquidConc{LHK}
-to_lhk(c::LiquidConc{L_PER_MT}) = c.value * KG_PER_HKG / KG_PER_MT                                |> LiquidConc{LHK}
+to_lhk(c::LiquidConc{L_PER_MT}) = c.value * KG_PER_HKG / KG_PER_MT                   |> LiquidConc{LHK}
 
 """
     to_gpm(c::LiquidConc) -> Float64
